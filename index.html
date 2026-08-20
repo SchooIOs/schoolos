@@ -124,6 +124,28 @@ button{font-family:inherit; cursor:pointer; border:none;}
 .btn.small.danger:hover{color:#fff; border-color:var(--coral); background:var(--coral);}
 .lernzettel-textarea{width:100%; min-height:220px; background:var(--bg-elevated); border:1px solid var(--border); border-radius:12px; padding:14px; color:var(--text); font-size:13.5px; font-family:inherit; line-height:1.6; resize:vertical;}
 
+/* AI Chat */
+.ai-chat-wrap{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px; display:flex; flex-direction:column; max-width:640px;}
+.ai-chat-messages{display:flex; flex-direction:column; gap:12px; max-height:480px; overflow-y:auto; padding:4px 4px 8px 4px;}
+.ai-msg{display:flex;}
+.ai-msg.user{justify-content:flex-end;}
+.ai-msg.bot{justify-content:flex-start;}
+.ai-msg-bubble{max-width:82%; padding:10px 14px; border-radius:14px; font-size:13.5px; line-height:1.55; white-space:pre-wrap; word-wrap:break-word;}
+.ai-msg.bot .ai-msg-bubble{background:var(--bg-elevated); border:1px solid var(--border); border-bottom-left-radius:4px;}
+.ai-msg.user .ai-msg-bubble{background:var(--grad); color:#0a0c14; font-weight:600; border-bottom-right-radius:4px;}
+.ai-msg.system .ai-msg-bubble{background:transparent; border:1px dashed var(--border); color:var(--text-faint); font-size:12px; margin:0 auto;}
+.ai-msg-bubble.ai-typing{display:flex; align-items:center; gap:5px; padding:12px 16px;}
+.ai-typing-dot{width:6px; height:6px; border-radius:50%; background:var(--text-faint); animation:aiTypingBounce 1.1s infinite ease-in-out;}
+.ai-typing-dot:nth-child(2){animation-delay:.15s;}
+.ai-typing-dot:nth-child(3){animation-delay:.3s;}
+@keyframes aiTypingBounce{0%,60%,100%{transform:translateY(0); opacity:.5;} 30%{transform:translateY(-4px); opacity:1;}}
+.ai-chat-inputrow{display:flex; gap:8px; align-items:flex-end; margin-top:10px; border-top:1px solid var(--border); padding-top:12px;}
+.ai-chat-inputrow textarea{flex:1; background:var(--bg-elevated); border:1px solid var(--border); border-radius:12px; padding:10px 12px; color:var(--text); font-size:13.5px; font-family:inherit; resize:none; max-height:140px; line-height:1.4;}
+.ai-chat-inputrow textarea:focus{outline:none; border-color:var(--violet);}
+.ai-chat-inputrow .btn{padding:10px 16px; font-size:15px; align-self:flex-end;}
+.ai-chat-inputrow .btn:disabled{opacity:.5;}
+.ai-fn-note{font-size:11px; color:var(--text-faint); display:flex; align-items:center; gap:5px; margin-top:2px;}
+
 /* Achievements */
 .ach-card{text-align:center; padding:20px 14px;}
 .ach-card.locked{opacity:.35; filter:grayscale(1);}
@@ -177,6 +199,29 @@ button{font-family:inherit; cursor:pointer; border:none;}
 .stat-tile{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px;}
 .stat-tile .v{font-family:'JetBrains Mono'; font-size:20px; font-weight:700;}
 .stat-tile .l{font-size:11.5px; color:var(--text-dim); margin-top:2px;}
+
+/* Dashboard charts */
+.chart-row{display:grid; grid-template-columns:1.35fr 1fr; gap:14px; margin:22px 0 8px;}
+@media(max-width:880px){.chart-row{grid-template-columns:1fr;}}
+.chart-card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px 20px 16px;}
+.chart-card-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:16px; gap:10px; flex-wrap:wrap;}
+.chart-card-title{font-family:'Space Grotesk'; font-weight:700; font-size:14px;}
+.chart-card-sub{font-size:11.5px; color:var(--text-dim); font-family:'JetBrains Mono';}
+.bar-chart{display:flex; align-items:flex-end; gap:10px; height:150px; padding-top:6px;}
+.bar-chart-col{flex:1; display:flex; flex-direction:column; align-items:center; gap:7px; height:100%; justify-content:flex-end;}
+.bar-chart-bar{width:100%; max-width:32px; border-radius:8px 8px 3px 3px; background:var(--grad); position:relative; min-height:5px; transition:height .6s cubic-bezier(.2,.8,.2,1); box-shadow:0 0 14px rgba(139,107,255,.25);}
+.bar-chart-bar.today{box-shadow:0 0 18px rgba(52,213,238,.45);}
+.bar-chart-bar.empty{background:var(--bg-elevated); border:1px dashed var(--border); box-shadow:none;}
+.bar-chart-val{font-size:10.5px; color:var(--text-faint); font-family:'JetBrains Mono'; min-height:13px;}
+.bar-chart-label{font-size:11px; color:var(--text-dim); font-weight:600;}
+.bar-chart-label.today{color:var(--cyan);}
+.donut-wrap{display:flex; align-items:center; gap:20px; flex-wrap:wrap;}
+.donut-legend{display:flex; flex-direction:column; gap:9px; font-size:12px; flex:1; min-width:120px;}
+.donut-legend-item{display:flex; align-items:center; gap:8px; color:var(--text-dim);}
+.donut-legend-dot{width:9px; height:9px; border-radius:3px; flex-shrink:0;}
+.donut-legend b{color:var(--text); font-family:'JetBrains Mono'; margin-left:auto; font-size:12px;}
+.chart-empty{color:var(--text-faint); font-size:12.5px; padding:36px 6px; text-align:center; line-height:1.6;}
+.donut-svg circle{transition:stroke-dasharray .6s cubic-bezier(.2,.8,.2,1);}
 
 /* Bottom nav mobile */
 .bottom-nav{display:none;}
@@ -314,6 +359,24 @@ body.lockin-active .nav-item, body.lockin-active .topbar, body.lockin-active .bo
         <div class="hud-track"><div class="hud-fill" id="hudFill" style="width:0%"></div></div>
       </div>
 
+      <div class="stat-tiles" id="dashStatTiles"></div>
+
+      <div class="chart-row">
+        <div class="chart-card">
+          <div class="chart-card-head">
+            <div class="chart-card-title">📊 Aktivität — letzte 7 Tage</div>
+            <div class="chart-card-sub" id="weeklyChartSub"></div>
+          </div>
+          <div id="weeklyChartSvgWrap"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-head">
+            <div class="chart-card-title">🎯 XP nach Fach</div>
+          </div>
+          <div id="subjectDonutWrap"></div>
+        </div>
+      </div>
+
       <div class="section-title">Heute <span class="pill" id="todayCountPill">0 offen</span></div>
       <div class="grid" id="todayTasks"></div>
 
@@ -434,14 +497,32 @@ body.lockin-active .nav-item, body.lockin-active .topbar, body.lockin-active .bo
       <div class="grid" id="achList"></div>
     </div>
 
-    <!-- KI-EINTRAG -->
+    <!-- KI-ASSISTENT -->
     <div class="view" id="view-ai-entry">
-      <h1 class="font-display" style="font-size:22px; margin-bottom:6px;">🤖 KI-Eintrag</h1>
-      <div style="color:var(--text-dim); font-size:13px; margin-bottom:16px; max-width:560px;">Schreib in einem Satz, wann und worüber du eine Klausur schreibst — die KI erkennt Fach, Datum und Thema und trägt die Klausur für dich ein.</div>
-      <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:22px; max-width:560px;">
-        <textarea id="aiEntryInput" class="lernzettel-textarea" style="min-height:100px;" placeholder="z. B. Ich schreibe am 12.3.26 eine Biologie Klausur über Zellbiologie und Mitose"></textarea>
-        <button class="btn" id="aiEntryBtn" style="margin-top:14px;" onclick="parseExamFromAI()">✨ Klausur erkennen lassen</button>
-        <div id="aiEntryStatus" style="margin-top:10px; font-size:12.5px; color:var(--text-dim);"></div>
+      <div class="hero-row" style="margin-bottom:14px;">
+        <div>
+          <h1 class="font-display" style="font-size:22px; margin-bottom:6px;">🤖 KI-Assistent</h1>
+          <div style="color:var(--text-dim); font-size:13px; max-width:560px;">Powered by Gemini. Frag nach Zusammenfassungen, lass dir Aufgaben und Klausuren eintragen oder Lernzettel schreiben — der Assistent kann direkt in SchoolOS handeln.</div>
+        </div>
+        <button class="btn ghost small" onclick="resetAiChat()" title="Chat leeren">🧹 Chat leeren</button>
+      </div>
+      <div class="pill-row" id="aiSuggestRow">
+        <button class="pill" onclick="aiSuggest('Ich schreibe am 12.3.26 eine Biologie Klausur über Zellbiologie und Mitose. Trag das ein und erstell einen Lernplan.')">✨ Klausur eintragen</button>
+        <button class="pill" onclick="aiSuggest('Schreib mir eine kurze Zusammenfassung zum Thema Mitose und speichere sie als Lernzettel in meiner nächsten Bio-Klausur.')">📄 Zusammenfassung schreiben</button>
+        <button class="pill" onclick="aiSuggest('Leg mir eine neue Aufgabe an: Mathe Hausaufgaben, fällig übermorgen.')">✅ Aufgabe anlegen</button>
+        <button class="pill" onclick="aiSuggest('Was steht diese Woche bei mir an?')">🗓️ Wochenüberblick</button>
+      </div>
+      <div class="ai-chat-wrap">
+        <div class="ai-chat-messages" id="aiChatMessages">
+          <div class="ai-msg bot">
+            <div class="ai-msg-bubble">Hey! Ich bin dein KI-Assistent für SchoolOS. Ich kann Aufgaben und Klausuren für dich anlegen, erledigen oder löschen, Fächer verwalten und dir Zusammenfassungen als Lernzettel speichern. Was brauchst du?</div>
+          </div>
+        </div>
+        <div class="ai-chat-inputrow">
+          <textarea id="aiChatInput" placeholder="Schreib deinem KI-Assistenten..." rows="1" onkeydown="handleAiChatKeydown(event)" oninput="autoGrowAiInput()"></textarea>
+          <button class="btn" id="aiChatSendBtn" onclick="sendAiChatMessage()">➤</button>
+        </div>
+        <div style="font-size:11px; color:var(--text-faint); margin-top:8px;">Die KI kann sich irren — prüfe wichtige Ergebnisse (z. B. Klausurtermine) kurz nach.</div>
       </div>
     </div>
 
@@ -557,7 +638,7 @@ const DEFAULT_SUBJECTS = [
 
 function freshState(name){
   return {
-    user: { name: name||"Schüler", level:1, xp:0, xpMax:100, streak:0, studyMinutes:0, tasksDone:0, examsDone:0, weekXp:0 },
+    user: { name: name||"Schüler", level:1, xp:0, xpMax:100, streak:0, studyMinutes:0, tasksDone:0, examsDone:0, weekXp:0, activityLog:[] },
     subjects: DEFAULT_SUBJECTS.map(s=>({...s})),
     tasks: [],
     exams: [],
@@ -594,10 +675,25 @@ function toast(msg, isLevel=false){
   setTimeout(()=>el.remove(), 3000);
 }
 
+/* ============ ACTIVITY LOG (für Dashboard-Diagramme) ============ */
+function logActivity(field, amount){
+  if(!amount) return;
+  if(!state.user.activityLog) state.user.activityLog = [];
+  const iso = todayISO();
+  let entry = state.user.activityLog.find(a=>a.date===iso);
+  if(!entry){ entry = {date:iso, xp:0, minutes:0, tasks:0}; state.user.activityLog.push(entry); }
+  entry[field] = (entry[field]||0) + amount;
+  if(state.user.activityLog.length > 30){
+    state.user.activityLog.sort((a,b)=>a.date.localeCompare(b.date));
+    state.user.activityLog = state.user.activityLog.slice(-30);
+  }
+}
+
 /* ============ XP / LEVEL ============ */
 function grantXp(amount, label){
   state.user.xp += amount;
   state.user.weekXp += amount;
+  logActivity('xp', amount);
   toast(`⚡ +${amount} XP ${label?('· '+label):''}`);
   while(state.user.xp >= state.user.xpMax){
     state.user.xp -= state.user.xpMax;
@@ -628,6 +724,10 @@ function renderDashboard(){
   document.getElementById('hudXpMax').textContent = state.user.xpMax;
   document.getElementById('hudFill').style.width = Math.min(100, (state.user.xp/state.user.xpMax*100))+'%';
 
+  renderDashStats();
+  renderWeeklyChart();
+  renderSubjectDonut();
+
   const today = state.tasks.filter(t=>t.deadline<=todayISO() && !t.done);
   document.getElementById('todayCountPill').textContent = `${today.length} offen`;
   const todayAll = state.tasks.filter(t=>t.deadline<=todayISO());
@@ -639,6 +739,91 @@ function renderDashboard(){
 
   const nextAch = state.achievements.find(a=>!a.unlocked);
   document.getElementById('dashAchievement').innerHTML = nextAch ? achCardHtml(nextAch) : `<div style="color:var(--text-faint); font-size:13px;">Alle Achievements freigeschaltet! 👑</div>`;
+}
+
+/* ---------- Dashboard: Stat-Kacheln ---------- */
+function renderDashStats(){
+  const openExams = state.exams.filter(e=>daysUntil(e.date)>=0).length;
+  document.getElementById('dashStatTiles').innerHTML = `
+    <div class="stat-tile"><div class="v">⚡ ${state.user.weekXp}</div><div class="l">XP diese Woche</div></div>
+    <div class="stat-tile"><div class="v">✅ ${state.user.tasksDone}</div><div class="l">Aufgaben erledigt</div></div>
+    <div class="stat-tile"><div class="v">📚 ${Math.floor(state.user.studyMinutes/60)}h ${state.user.studyMinutes%60}min</div><div class="l">Lernzeit gesamt</div></div>
+    <div class="stat-tile"><div class="v">🚨 ${openExams}</div><div class="l">Anstehende Klausuren</div></div>
+  `;
+}
+
+/* ---------- Dashboard: Wochenaktivität (Balkendiagramm) ---------- */
+function last7DaysActivity(){
+  const log = state.user.activityLog || [];
+  const days = [];
+  for(let i=6; i>=0; i--){
+    const iso = addDaysISO(-i);
+    const entry = log.find(a=>a.date===iso);
+    days.push({ date: iso, xp: entry?(entry.xp||0):0, minutes: entry?(entry.minutes||0):0, tasks: entry?(entry.tasks||0):0 });
+  }
+  return days;
+}
+
+function renderWeeklyChart(){
+  const data = last7DaysActivity();
+  const totalXp = data.reduce((s,d)=>s+d.xp,0);
+  const subEl = document.getElementById('weeklyChartSub');
+  const wrap = document.getElementById('weeklyChartSvgWrap');
+  if(totalXp===0){
+    subEl.textContent = '';
+    wrap.innerHTML = `<div class="chart-empty">Noch keine Aktivität diese Woche.<br>Erledige Aufgaben oder starte eine Lernsession — deine Woche erscheint hier. 📈</div>`;
+    return;
+  }
+  subEl.textContent = `${totalXp} XP gesamt`;
+  const max = Math.max(...data.map(d=>d.xp), 1);
+  const dayLabels = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+  const todayIso = todayISO();
+  wrap.innerHTML = `<div class="bar-chart">${data.map(d=>{
+    const h = d.xp>0 ? Math.max(8, Math.round((d.xp/max)*130)) : 4;
+    const dow = dayLabels[new Date(d.date+'T00:00:00').getDay()];
+    const isToday = d.date===todayIso;
+    return `<div class="bar-chart-col">
+      <div class="bar-chart-val">${d.xp>0?d.xp:''}</div>
+      <div class="bar-chart-bar ${d.xp===0?'empty':''} ${isToday?'today':''}" style="height:${h}px;" title="${dow}: ${d.xp} XP"></div>
+      <div class="bar-chart-label ${isToday?'today':''}">${dow}</div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+/* ---------- Dashboard: XP nach Fach (Donut-Diagramm) ---------- */
+const DONUT_COLORS = ['#8b6bff','#34d5ee','#f5b942','#ff5c7c','#ff9d4d','#34d399','#a78bfa','#38bdf8'];
+
+function renderSubjectDonut(){
+  const wrap = document.getElementById('subjectDonutWrap');
+  const data = [...state.subjects].filter(s=>s.xp>0).sort((a,b)=>b.xp-a.xp);
+  const total = data.reduce((s,d)=>s+d.xp,0);
+  if(total===0){
+    wrap.innerHTML = `<div class="chart-empty">Noch keine XP verdient.<br>Schließe Aufgaben ab, um zu sehen, wo deine Zeit hingeht. 🎯</div>`;
+    return;
+  }
+  const r=48, cx=60, cy=60, sw=15, circumference=2*Math.PI*r;
+  let offset = 0;
+  const segments = data.map((s,i)=>{
+    const frac = s.xp/total;
+    const dash = Math.max(frac*circumference - 2, 0);
+    const circle = `<circle class="donut-seg" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${DONUT_COLORS[i%DONUT_COLORS.length]}" stroke-width="${sw}" stroke-dasharray="${dash} ${circumference-dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})" stroke-linecap="round"></circle>`;
+    offset += frac*circumference;
+    return circle;
+  }).join('');
+  const legend = data.map((s,i)=>`
+    <div class="donut-legend-item">
+      <span class="donut-legend-dot" style="background:${DONUT_COLORS[i%DONUT_COLORS.length]}"></span>
+      <span>${subjectIcon(s.name)} ${s.name}</span>
+      <b>${Math.round(s.xp/total*100)}%</b>
+    </div>`).join('');
+  wrap.innerHTML = `<div class="donut-wrap">
+    <svg class="donut-svg" width="120" height="120" viewBox="0 0 120 120">
+      ${segments}
+      <text x="60" y="57" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="18" font-weight="700" style="fill:var(--text)">${total}</text>
+      <text x="60" y="72" text-anchor="middle" font-family="'Inter',sans-serif" font-size="9" style="fill:var(--text-dim)">XP</text>
+    </svg>
+    <div class="donut-legend">${legend}</div>
+  </div>`;
 }
 
 function urgencyClass(iso){
@@ -719,6 +904,7 @@ function completeTask(id){
   t.done = true;
   state.user.tasksDone += 1;
   state._doneToday += 1;
+  logActivity('tasks', 1);
   const subj = state.subjects.find(s=>s.name===t.subject);
   if(subj) subj.done += 1;
   bumpStreak();
@@ -846,44 +1032,322 @@ function confirmDeleteExam(){
   toast('🗑 Klausur gelöscht');
 }
 
-/* ============ KI-EINTRAG (Gemini API, kostenloser Free-Tier) ============ */
+/* ============ KI-ASSISTENT (Gemini API, Function Calling, volle App-Kontrolle) ============ */
 // Kostenlosen Key erstellen unter https://aistudio.google.com/apikey (kein Kreditkarte nötig)
+// WICHTIG: Ein im Frontend eingetragener Key ist für jeden Besucher der Seite sichtbar/nutzbar.
+// Für eine echte Veröffentlichung sollte dieser Aufruf über ein eigenes Backend (Cloud Function o.ä.) laufen,
+// das den Key serverseitig hält.
 const GEMINI_API_KEY = "AQ.Ab8RN6JTXz9G-Pqg1Lxl764WebYUwKVHpQ_VmbDRq1WKegsHFQ";
 const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
-async function parseExamFromAI(){
-  const input = document.getElementById('aiEntryInput');
-  const text = input.value.trim();
-  const statusEl = document.getElementById('aiEntryStatus');
-  const btn = document.getElementById('aiEntryBtn');
-  if(!text){ statusEl.textContent = 'Bitte erst einen Satz eingeben.'; return; }
+let aiChatHistory = []; // [{role:'user'|'model'|'function', parts:[...]}]
+let aiSending = false;
+
+/* Werkzeuge, die die KI selbstständig aufrufen kann, um SchoolOS zu steuern */
+const AI_TOOLS = [{
+  functionDeclarations: [
+    {
+      name: "create_task",
+      description: "Erstellt eine neue Aufgabe/Hausaufgabe für den Nutzer.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Titel der Aufgabe" },
+          subject: { type: "string", description: "Name eines existierenden Fachs" },
+          description: { type: "string", description: "Kurze Beschreibung, optional" },
+          deadline: { type: "string", description: "Fälligkeitsdatum im Format JJJJ-MM-TT" },
+          priority: { type: "string", enum: ["Niedrig", "Mittel", "Hoch"] },
+          xp: { type: "number", description: "XP-Belohnung, Standard 20" }
+        },
+        required: ["title", "subject"]
+      }
+    },
+    {
+      name: "complete_task",
+      description: "Markiert eine bestehende Aufgabe (per ID) als erledigt und vergibt XP.",
+      parameters: { type: "object", properties: { task_id: { type: "number" } }, required: ["task_id"] }
+    },
+    {
+      name: "delete_task",
+      description: "Löscht eine bestehende Aufgabe per ID.",
+      parameters: { type: "object", properties: { task_id: { type: "number" } }, required: ["task_id"] }
+    },
+    {
+      name: "create_exam",
+      description: "Erstellt eine neue Klausur inkl. automatischem Lernplan.",
+      parameters: {
+        type: "object",
+        properties: {
+          subject: { type: "string", description: "Name eines existierenden Fachs" },
+          title: { type: "string" },
+          date: { type: "string", description: "JJJJ-MM-TT" },
+          topics: { type: "array", items: { type: "string" } }
+        },
+        required: ["subject", "title", "date"]
+      }
+    },
+    {
+      name: "delete_exam",
+      description: "Löscht eine bestehende Klausur per ID, inkl. Lernplan und Lernzettel.",
+      parameters: { type: "object", properties: { exam_id: { type: "number" } }, required: ["exam_id"] }
+    },
+    {
+      name: "write_lernzettel",
+      description: "Schreibt oder überschreibt den Lernzettel (Zusammenfassung/Notizen) einer Klausur per ID. Nutze dies, um für den Nutzer erstellte Zusammenfassungen dauerhaft zu speichern.",
+      parameters: {
+        type: "object",
+        properties: {
+          exam_id: { type: "number" },
+          content: { type: "string", description: "Vollständiger Lernzettel-Text als Klartext." }
+        },
+        required: ["exam_id", "content"]
+      }
+    },
+    {
+      name: "create_subject",
+      description: "Legt ein neues Schulfach an.",
+      parameters: {
+        type: "object",
+        properties: { name: { type: "string" }, icon: { type: "string", description: "Ein Emoji, optional" } },
+        required: ["name"]
+      }
+    },
+    {
+      name: "delete_subject",
+      description: "Löscht ein bestehendes Fach per ID.",
+      parameters: { type: "object", properties: { subject_id: { type: "string" } }, required: ["subject_id"] }
+    }
+  ]
+}];
+
+/* Führt einen von der KI angeforderten Funktionsaufruf lokal gegen den App-State aus */
+function aiToolExecute(name, args){
+  args = args || {};
+  try{
+    switch(name){
+      case "create_task": {
+        const subj = state.subjects.find(s=>s.name.toLowerCase()===String(args.subject||'').toLowerCase());
+        const task = {
+          id: Date.now() + Math.floor(Math.random()*1000),
+          title: args.title || 'Aufgabe',
+          subject: subj ? subj.name : (args.subject || state.subjects[0]?.name || 'Allgemein'),
+          desc: args.description || '',
+          deadline: /^\d{4}-\d{2}-\d{2}$/.test(args.deadline||'') ? args.deadline : todayISO(),
+          priority: ['Niedrig','Mittel','Hoch'].includes(args.priority) ? args.priority : 'Mittel',
+          xp: Number.isFinite(args.xp) ? args.xp : 20,
+          done:false
+        };
+        state.tasks.push(task);
+        renderAll();
+        toast('🤖 Aufgabe erstellt: '+task.title);
+        return { success:true, task };
+      }
+      case "complete_task": {
+        const t = state.tasks.find(x=>x.id===args.task_id);
+        if(!t) return { success:false, error:'Aufgabe nicht gefunden' };
+        if(t.done) return { success:true, note:'War bereits erledigt' };
+        completeTask(t.id);
+        return { success:true };
+      }
+      case "delete_task": {
+        if(!state.tasks.some(x=>x.id===args.task_id)) return { success:false, error:'Aufgabe nicht gefunden' };
+        state.tasks = state.tasks.filter(x=>x.id!==args.task_id);
+        renderAll();
+        toast('🤖 Aufgabe gelöscht');
+        return { success:true };
+      }
+      case "create_exam": {
+        const subj = state.subjects.find(s=>s.name.toLowerCase()===String(args.subject||'').toLowerCase());
+        const topics = Array.isArray(args.topics) ? args.topics.map(t=>String(t).trim()).filter(Boolean) : [];
+        const exam = {
+          id: Date.now() + Math.floor(Math.random()*1000),
+          subject: subj ? subj.name : (args.subject || state.subjects[0]?.name || 'Allgemein'),
+          title: args.title || 'Klausur',
+          date: /^\d{4}-\d{2}-\d{2}$/.test(args.date||'') ? args.date : addDaysISO(7),
+          progress: 0,
+          topics: topics.length ? topics : ['Wiederholung'],
+          notes: ''
+        };
+        state.exams.push(exam);
+        generateStudyPlan(exam);
+        renderAll();
+        toast('🤖 Klausur erstellt: '+exam.title);
+        return { success:true, exam };
+      }
+      case "delete_exam": {
+        if(!state.exams.some(x=>x.id===args.exam_id)) return { success:false, error:'Klausur nicht gefunden' };
+        state.exams = state.exams.filter(x=>x.id!==args.exam_id);
+        delete state.studyPlans[args.exam_id];
+        renderAll();
+        toast('🤖 Klausur gelöscht');
+        return { success:true };
+      }
+      case "write_lernzettel": {
+        const exam = state.exams.find(x=>x.id===args.exam_id);
+        if(!exam) return { success:false, error:'Klausur nicht gefunden' };
+        exam.notes = args.content || '';
+        renderAll();
+        toast('🤖 Lernzettel gespeichert: '+exam.title);
+        return { success:true };
+      }
+      case "create_subject": {
+        const nm = (args.name||'').trim();
+        if(!nm) return { success:false, error:'Kein Name angegeben' };
+        if(state.subjects.some(s=>s.name.toLowerCase()===nm.toLowerCase())) return { success:false, error:'Fach existiert bereits' };
+        const subj = { id:'subj_'+Date.now(), name:nm, icon: args.icon || '📘', tasks:0, done:0, minutes:0, xp:0, exams:0 };
+        state.subjects.push(subj);
+        renderAll();
+        toast('🤖 Fach hinzugefügt: '+nm);
+        return { success:true, subject:subj };
+      }
+      case "delete_subject": {
+        if(!state.subjects.some(x=>x.id===args.subject_id)) return { success:false, error:'Fach nicht gefunden' };
+        state.subjects = state.subjects.filter(x=>x.id!==args.subject_id);
+        renderAll();
+        toast('🤖 Fach gelöscht');
+        return { success:true };
+      }
+      default:
+        return { success:false, error:'Unbekannte Funktion: '+name };
+    }
+  } catch(err){
+    console.error('AI tool execution failed', name, args, err);
+    return { success:false, error:'Ausführung fehlgeschlagen' };
+  }
+}
+
+/* Baut den aktuellen App-Kontext (System-Prompt) für die KI, inkl. IDs für Funktionsaufrufe */
+function buildAiSystemInstruction(){
+  const subjects = state.subjects.map(s=>`- ${s.name} (id: ${s.id})`).join('\n') || 'Keine Fächer angelegt.';
+  const tasks = state.tasks.map(t=>`- id:${t.id} | "${t.title}" | Fach:${t.subject} | Deadline:${t.deadline} | ${t.done?'erledigt':'offen'} | +${t.xp} XP`).join('\n') || 'Keine Aufgaben vorhanden.';
+  const exams = state.exams.map(e=>`- id:${e.id} | "${e.title}" | Fach:${e.subject} | Datum:${e.date} | Themen: ${(e.topics||[]).join(', ')||'-'} | Lernzettel vorhanden: ${e.notes && e.notes.trim() ? 'ja' : 'nein'}`).join('\n') || 'Keine Klausuren vorhanden.';
+
+  return `Du bist der KI-Assistent von SchoolOS, einer Lern- und Organisations-App für Schüler:innen. Der Nutzer heißt ${state.user.name} (Level ${state.user.level}).
+Heutiges Datum: ${todayISO()} (Format JJJJ-MM-TT).
+
+Verfügbare Fächer:
+${subjects}
+
+Aktuelle Aufgaben:
+${tasks}
+
+Aktuelle Klausuren:
+${exams}
+
+Du hast über die dir bereitgestellten Funktionen (Tools) direkte Kontrolle über die App: Du kannst Aufgaben und Klausuren anlegen, erledigen und löschen, Fächer anlegen und löschen, sowie Lernzettel (Zusammenfassungen/Notizen) zu Klausuren schreiben und speichern.
+Regeln:
+- Nutze die Funktionen aktiv und direkt, wenn der Nutzer eine Aktion verlangt oder sinnvoll erscheint — beschreibe nicht nur, was man tun könnte, sondern tu es.
+- Wenn du eine inhaltliche Zusammenfassung zu einem Lernthema schreibst und eine passende Klausur existiert (oder gerade erstellt wurde), biete an, sie per write_lernzettel zu speichern, bzw. speichere sie direkt, wenn der Nutzer das erkennbar möchte.
+- Referenziere Aufgaben/Klausuren/Fächer immer über ihre echten IDs aus der Liste oben, nie erfundene IDs.
+- Frage kurz nach, falls eine notwendige Angabe (z. B. welches Fach) unklar oder mehrdeutig ist, statt zu raten.
+- Antworte immer auf Deutsch, in einem freundlichen, knappen, motivierenden Ton, passend zu einer Schul-App.
+- Nach einem Funktionsaufruf gib dem Nutzer immer noch eine kurze, natürlichsprachliche Bestätigung.`;
+}
+
+/* ---------- Chat UI ---------- */
+function appendAiMessage(role, text){
+  const wrap = document.getElementById('aiChatMessages');
+  const el = document.createElement('div');
+  el.className = 'ai-msg ' + role;
+  const bubble = document.createElement('div');
+  bubble.className = 'ai-msg-bubble';
+  bubble.textContent = text;
+  el.appendChild(bubble);
+  wrap.appendChild(el);
+  wrap.scrollTop = wrap.scrollHeight;
+  return el;
+}
+
+function appendAiTyping(){
+  const wrap = document.getElementById('aiChatMessages');
+  const el = document.createElement('div');
+  el.className = 'ai-msg bot';
+  el.id = 'aiTypingIndicator';
+  el.innerHTML = `<div class="ai-msg-bubble ai-typing"><span class="ai-typing-dot"></span><span class="ai-typing-dot"></span><span class="ai-typing-dot"></span></div>`;
+  wrap.appendChild(el);
+  wrap.scrollTop = wrap.scrollHeight;
+  return el.id;
+}
+function removeAiTyping(){
+  const el = document.getElementById('aiTypingIndicator');
+  if(el) el.remove();
+}
+
+function setAiSending(v){
+  aiSending = v;
+  const btn = document.getElementById('aiChatSendBtn');
+  const input = document.getElementById('aiChatInput');
+  if(btn) btn.disabled = v;
+  if(input) input.disabled = v;
+}
+
+function handleAiChatKeydown(ev){
+  if(ev.key === 'Enter' && !ev.shiftKey){
+    ev.preventDefault();
+    sendAiChatMessage();
+  }
+}
+function autoGrowAiInput(){
+  const el = document.getElementById('aiChatInput');
+  if(!el) return;
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+}
+function aiSuggest(text){
+  const el = document.getElementById('aiChatInput');
+  el.value = text;
+  autoGrowAiInput();
+  sendAiChatMessage();
+}
+function resetAiChat(){
+  aiChatHistory = [];
+  document.getElementById('aiChatMessages').innerHTML = `<div class="ai-msg bot"><div class="ai-msg-bubble">Neuer Chat gestartet. Was brauchst du?</div></div>`;
+}
+
+async function sendAiChatMessage(){
+  if(aiSending) return;
+  const inputEl = document.getElementById('aiChatInput');
+  const text = inputEl.value.trim();
+  if(!text) return;
+
   if(!GEMINI_API_KEY || GEMINI_API_KEY.startsWith('DEIN_')){
-    statusEl.textContent = '⚠️ Es wurde noch kein Gemini-API-Key eingetragen (siehe README).';
+    appendAiMessage('bot', '⚠️ Es wurde noch kein Gemini-API-Key eingetragen (siehe README).');
     return;
   }
 
-  statusEl.textContent = '⏳ KI liest deinen Text...';
-  btn.disabled = true;
+  inputEl.value = '';
+  autoGrowAiInput();
+  appendAiMessage('user', text);
+  aiChatHistory.push({ role:'user', parts:[{ text }] });
 
-  const subjectNames = state.subjects.map(s=>s.name).join(', ');
-  const prompt = `Du bist ein Assistent, der aus einem deutschen Satz Informationen zu einer bevorstehenden Schulklausur extrahiert.
-Heutiges Datum: ${todayISO()} (Format JJJJ-MM-TT).
-Verfügbare Fächer in der App: ${subjectNames}. Wähle das Fach aus dieser Liste, das am besten passt, auch bei ungenauer oder abweichender Schreibweise.
-Antworte AUSSCHLIESSLICH mit einem JSON-Objekt in genau diesem Format, ohne weiteren Text, ohne Markdown:
-{"subject": "eines der verfügbaren Fächer", "title": "kurzer Titel für die Klausur", "date": "JJJJ-MM-TT", "topics": ["Thema 1", "Thema 2"]}
-
-Der Satz: "${text}"`;
-
+  setAiSending(true);
+  appendAiTyping();
   try{
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
+    const finalText = await runAiTurn();
+    removeAiTyping();
+    appendAiMessage('bot', finalText || '(Keine Antwort erhalten)');
+  } catch(err){
+    console.error(err);
+    removeAiTyping();
+    appendAiMessage('bot', '⚠️ Da ist etwas schiefgelaufen. Versuch es nochmal oder formuliere die Anfrage etwas anders.');
+  } finally {
+    setAiSending(false);
+  }
+}
+
+/* Führt einen kompletten "Turn" aus: fragt Gemini, führt ggf. Funktionsaufrufe aus, fragt erneut, bis Text kommt */
+async function runAiTurn(){
+  const maxSteps = 6;
+  for(let step = 0; step < maxSteps; step++){
+    const res = await fetch(GEMINI_ENDPOINT, {
       method: 'POST',
-      headers: {
-        'Content-Type':'application/json',
-        'X-goog-api-key': GEMINI_API_KEY
-      },
+      headers: { 'Content-Type':'application/json', 'X-goog-api-key': GEMINI_API_KEY },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: "application/json", temperature: 0.2 }
+        contents: aiChatHistory,
+        systemInstruction: { parts: [{ text: buildAiSystemInstruction() }] },
+        tools: AI_TOOLS,
+        generationConfig: { temperature: 0.4 }
       })
     });
     if(!res.ok){
@@ -892,57 +1356,24 @@ Der Satz: "${text}"`;
       throw new Error('HTTP '+res.status);
     }
     const data = await res.json();
-    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if(!raw) throw new Error('Keine verwertbare Antwort erhalten');
-    const parsed = JSON.parse(raw);
-    statusEl.textContent = '';
-    showExamAIConfirm(parsed);
-  } catch(err){
-    console.error(err);
-    statusEl.textContent = '⚠️ Konnte den Text nicht auswerten. Versuch es nochmal oder formuliere den Satz etwas anders.';
-  } finally {
-    btn.disabled = false;
+    const candidate = data?.candidates?.[0];
+    const parts = candidate?.content?.parts || [];
+    if(!parts.length) throw new Error('Keine verwertbare Antwort erhalten');
+
+    aiChatHistory.push({ role:'model', parts });
+
+    const functionCalls = parts.filter(p=>p.functionCall);
+    if(functionCalls.length === 0){
+      return parts.filter(p=>p.text).map(p=>p.text).join('\n').trim();
+    }
+
+    const responseParts = functionCalls.map(fc=>{
+      const result = aiToolExecute(fc.functionCall.name, fc.functionCall.args);
+      return { functionResponse: { name: fc.functionCall.name, response: result } };
+    });
+    aiChatHistory.push({ role:'function', parts: responseParts });
   }
-}
-
-function showExamAIConfirm(parsed){
-  const subjectOptions = state.subjects.map(s=>
-    `<option ${s.name===parsed.subject?'selected':''}>${s.name}</option>`).join('');
-  const safeTitle = (parsed.title||'').replace(/"/g,'&quot;');
-  const safeDate = /^\d{4}-\d{2}-\d{2}$/.test(parsed.date||'') ? parsed.date : todayISO();
-  const html = `
-    <h3>🤖 Erkannt — bitte kurz prüfen</h3>
-    <div style="color:var(--text-dim); font-size:12.5px; margin:6px 0 14px;">Die KI kann sich irren — passe bei Bedarf an, bevor du übernimmst.</div>
-    <div class="form-row">
-      <div class="field"><label>Fach</label><select id="aiConfirmSubject">${subjectOptions}</select></div>
-      <div class="field"><label>Datum</label><input type="date" id="aiConfirmDate" value="${safeDate}"/></div>
-    </div>
-    <div class="field"><label>Titel</label><input id="aiConfirmTitle" value="${safeTitle}"/></div>
-    <div class="field"><label>Themen (eins pro Zeile)</label><textarea id="aiConfirmTopics">${(parsed.topics||[]).join('\n')}</textarea></div>
-    <div class="modal-actions">
-      <button class="btn ghost" onclick="closeGenericModal()">Abbrechen</button>
-      <button class="btn" onclick="confirmAIExam()">✅ Klausur eintragen</button>
-    </div>`;
-  showGenericModal(html);
-}
-
-function confirmAIExam(){
-  const title = document.getElementById('aiConfirmTitle').value.trim() || 'Klausur';
-  const subject = document.getElementById('aiConfirmSubject').value;
-  const date = document.getElementById('aiConfirmDate').value || todayISO();
-  const topics = document.getElementById('aiConfirmTopics').value.split('\n').map(s=>s.trim()).filter(Boolean);
-  const exam = {
-    id: Date.now(),
-    subject, title, date, progress:0,
-    topics: topics.length?topics:['Wiederholung'],
-    notes:''
-  };
-  state.exams.push(exam);
-  generateStudyPlan(exam);
-  closeGenericModal();
-  document.getElementById('aiEntryInput').value = '';
-  renderAll();
-  toast('🤖 Klausur automatisch eingetragen');
+  return 'Ich habe mehrere Schritte ausgeführt — schau gern kurz in der App nach, ob alles passt!';
 }
 
 function generateStudyPlan(exam){
@@ -1130,6 +1561,7 @@ function endFocus(completed){
   document.body.classList.remove('lockin-active');
   const minutesDone = Math.round((state.focus.totalSeconds - Math.max(state.focus.secondsLeft,0))/60);
   state.user.studyMinutes += minutesDone;
+  if(minutesDone>0) logActivity('minutes', minutesDone);
   const subj = state.subjects.find(s=>s.name===state.focus.subject);
   if(subj) subj.minutes += minutesDone;
   if(completed && minutesDone>0){
