@@ -742,8 +742,18 @@ function saveTask(){
 
 /* ============ EXAMS VIEW ============ */
 function renderExamsView(){
-  const sorted = [...state.exams].sort((a,b)=>daysUntil(a.date)-daysUntil(b.date));
-  document.getElementById('examList').innerHTML = sorted.map(examCardHtml).join('');
+  const upcoming = [...state.exams].filter(e=>daysUntil(e.date)>=0).sort((a,b)=>daysUntil(a.date)-daysUntil(b.date));
+  const past = [...state.exams].filter(e=>daysUntil(e.date)<0).sort((a,b)=>daysUntil(b.date)-daysUntil(a.date));
+  const upcomingHtml = upcoming.length ? upcoming.map(e=>examCardHtml(e,false)).join('') :
+    `<div style="color:var(--text-faint); font-size:13px;">Keine anstehenden Klausuren.</div>`;
+  const pastHtml = past.length ? past.map(e=>examCardHtml(e,true)).join('') :
+    `<div style="color:var(--text-faint); font-size:13px;">Noch keine vergangenen Klausuren.</div>`;
+  document.getElementById('examList').innerHTML = `
+    <div class="exam-section-label">Anstehend</div>
+    <div class="grid">${upcomingHtml}</div>
+    <div class="exam-section-label" style="margin-top:26px;">Vergangen</div>
+    <div class="grid">${pastHtml}</div>
+  `;
 }
 function openExamModal(){
   const sel = document.getElementById('examSubjectInput');
@@ -764,13 +774,56 @@ function saveExam(){
     title,
     date: document.getElementById('examDateInput').value || addDaysISO(7),
     progress: 0,
-    topics: topics.length?topics:['Wiederholung']
+    topics: topics.length?topics:['Wiederholung'],
+    notes: ''
   };
   state.exams.push(exam);
   generateStudyPlan(exam);
   closeExamModal();
   renderAll();
   toast('📅 Klausur erstellt & Lernplan generiert');
+}
+
+/* ---------- Lernzettel (Notizen pro Klausur) ---------- */
+function openExamNotes(examId){
+  const exam = state.exams.find(e=>e.id===examId);
+  if(!exam) return;
+  const html = `
+    <h3>${exam.title} — Lernzettel</h3>
+    <div style="color:var(--text-dim); font-size:12.5px; margin:6px 0 14px;">Trag hier alles ein, was du zu dieser Klausur brauchst — Zusammenfassungen, Formeln, Notizen. Von überall abrufbar.</div>
+    <textarea class="lernzettel-textarea" id="lernzettelTextarea" placeholder="z. B. Formeln, Zusammenfassung, wichtige Punkte...">${exam.notes||''}</textarea>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeGenericModal()">Schließen</button>
+      <button class="btn" onclick="saveExamNotes(${exam.id})">Speichern</button>
+    </div>`;
+  showGenericModal(html);
+}
+function saveExamNotes(examId){
+  const exam = state.exams.find(e=>e.id===examId);
+  if(!exam) return;
+  exam.notes = document.getElementById('lernzettelTextarea').value;
+  closeGenericModal();
+  renderAll();
+  toast('📄 Lernzettel gespeichert');
+}
+
+/* ---------- Klausur löschen ---------- */
+let examPendingDeleteId = null;
+function requestDeleteExam(examId){
+  examPendingDeleteId = examId;
+  document.getElementById('deleteExamConfirmOverlay').classList.add('show');
+}
+function closeDeleteExamConfirm(){
+  examPendingDeleteId = null;
+  document.getElementById('deleteExamConfirmOverlay').classList.remove('show');
+}
+function confirmDeleteExam(){
+  if(examPendingDeleteId==null) return;
+  state.exams = state.exams.filter(e=>e.id!==examPendingDeleteId);
+  delete state.studyPlans[examPendingDeleteId];
+  closeDeleteExamConfirm();
+  renderAll();
+  toast('🗑 Klausur gelöscht');
 }
 
 function generateStudyPlan(exam){
