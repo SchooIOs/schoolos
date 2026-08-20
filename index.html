@@ -1051,14 +1051,14 @@ const AI_TOOLS = [{
       name: "create_task",
       description: "Erstellt eine neue Aufgabe/Hausaufgabe für den Nutzer.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          title: { type: "string", description: "Titel der Aufgabe" },
-          subject: { type: "string", description: "Name eines existierenden Fachs" },
-          description: { type: "string", description: "Kurze Beschreibung, optional" },
-          deadline: { type: "string", description: "Fälligkeitsdatum im Format JJJJ-MM-TT" },
-          priority: { type: "string", enum: ["Niedrig", "Mittel", "Hoch"] },
-          xp: { type: "number", description: "XP-Belohnung, Standard 20" }
+          title: { type: "STRING", description: "Titel der Aufgabe" },
+          subject: { type: "STRING", description: "Name eines existierenden Fachs" },
+          description: { type: "STRING", description: "Kurze Beschreibung, optional" },
+          deadline: { type: "STRING", description: "Fälligkeitsdatum im Format JJJJ-MM-TT" },
+          priority: { type: "STRING", enum: ["Niedrig", "Mittel", "Hoch"] },
+          xp: { type: "NUMBER", description: "XP-Belohnung, Standard 20" }
         },
         required: ["title", "subject"]
       }
@@ -1066,23 +1066,23 @@ const AI_TOOLS = [{
     {
       name: "complete_task",
       description: "Markiert eine bestehende Aufgabe (per ID) als erledigt und vergibt XP.",
-      parameters: { type: "object", properties: { task_id: { type: "number" } }, required: ["task_id"] }
+      parameters: { type: "OBJECT", properties: { task_id: { type: "NUMBER" } }, required: ["task_id"] }
     },
     {
       name: "delete_task",
       description: "Löscht eine bestehende Aufgabe per ID.",
-      parameters: { type: "object", properties: { task_id: { type: "number" } }, required: ["task_id"] }
+      parameters: { type: "OBJECT", properties: { task_id: { type: "NUMBER" } }, required: ["task_id"] }
     },
     {
       name: "create_exam",
       description: "Erstellt eine neue Klausur inkl. automatischem Lernplan.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          subject: { type: "string", description: "Name eines existierenden Fachs" },
-          title: { type: "string" },
-          date: { type: "string", description: "JJJJ-MM-TT" },
-          topics: { type: "array", items: { type: "string" } }
+          subject: { type: "STRING", description: "Name eines existierenden Fachs" },
+          title: { type: "STRING" },
+          date: { type: "STRING", description: "JJJJ-MM-TT" },
+          topics: { type: "ARRAY", items: { type: "STRING" } }
         },
         required: ["subject", "title", "date"]
       }
@@ -1090,16 +1090,16 @@ const AI_TOOLS = [{
     {
       name: "delete_exam",
       description: "Löscht eine bestehende Klausur per ID, inkl. Lernplan und Lernzettel.",
-      parameters: { type: "object", properties: { exam_id: { type: "number" } }, required: ["exam_id"] }
+      parameters: { type: "OBJECT", properties: { exam_id: { type: "NUMBER" } }, required: ["exam_id"] }
     },
     {
       name: "write_lernzettel",
       description: "Schreibt oder überschreibt den Lernzettel (Zusammenfassung/Notizen) einer Klausur per ID. Nutze dies, um für den Nutzer erstellte Zusammenfassungen dauerhaft zu speichern.",
       parameters: {
-        type: "object",
+        type: "OBJECT",
         properties: {
-          exam_id: { type: "number" },
-          content: { type: "string", description: "Vollständiger Lernzettel-Text als Klartext." }
+          exam_id: { type: "NUMBER" },
+          content: { type: "STRING", description: "Vollständiger Lernzettel-Text als Klartext." }
         },
         required: ["exam_id", "content"]
       }
@@ -1108,15 +1108,15 @@ const AI_TOOLS = [{
       name: "create_subject",
       description: "Legt ein neues Schulfach an.",
       parameters: {
-        type: "object",
-        properties: { name: { type: "string" }, icon: { type: "string", description: "Ein Emoji, optional" } },
+        type: "OBJECT",
+        properties: { name: { type: "STRING" }, icon: { type: "STRING", description: "Ein Emoji, optional" } },
         required: ["name"]
       }
     },
     {
       name: "delete_subject",
       description: "Löscht ein bestehendes Fach per ID.",
-      parameters: { type: "object", properties: { subject_id: { type: "string" } }, required: ["subject_id"] }
+      parameters: { type: "OBJECT", properties: { subject_id: { type: "STRING" } }, required: ["subject_id"] }
     }
   ]
 }];
@@ -1330,7 +1330,7 @@ async function sendAiChatMessage(){
   } catch(err){
     console.error(err);
     removeAiTyping();
-    appendAiMessage('bot', '⚠️ Da ist etwas schiefgelaufen. Versuch es nochmal oder formuliere die Anfrage etwas anders.');
+    appendAiMessage('bot', '⚠️ Da ist etwas schiefgelaufen: '+(err?.message||'unbekannter Fehler')+'. Öffne die Browser-Konsole (F12) für mehr Details, oder versuch es nochmal.');
   } finally {
     setAiSending(false);
   }
@@ -1353,10 +1353,18 @@ async function runAiTurn(){
     if(!res.ok){
       const errText = await res.text();
       console.error('Gemini API Fehler', res.status, errText);
-      throw new Error('HTTP '+res.status);
+      let detail = '';
+      try{ detail = JSON.parse(errText)?.error?.message || ''; } catch(e){}
+      throw new Error(`HTTP ${res.status}${detail ? ': '+detail : ''}`);
     }
     const data = await res.json();
+    if(data.promptFeedback?.blockReason){
+      throw new Error('Von Gemini blockiert: '+data.promptFeedback.blockReason);
+    }
     const candidate = data?.candidates?.[0];
+    if(candidate?.finishReason && !['STOP','MAX_TOKENS'].includes(candidate.finishReason) && !candidate?.content?.parts?.length){
+      throw new Error('Kein Ergebnis (finishReason: '+candidate.finishReason+')');
+    }
     const parts = candidate?.content?.parts || [];
     if(!parts.length) throw new Error('Keine verwertbare Antwort erhalten');
 
