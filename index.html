@@ -117,6 +117,12 @@ button{font-family:inherit; cursor:pointer; border:none;}
 .exam-days.ok{color:var(--mint);}
 .bar-track{height:8px; border-radius:100px; background:var(--bg-elevated); overflow:hidden;}
 .bar-fill{height:100%; border-radius:100px; background:var(--grad);}
+.exam-card.past{border-left-color:var(--text-faint); opacity:.85;}
+.exam-days.past{color:var(--text-faint); font-weight:600;}
+.exam-section-label{font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-faint); margin:6px 0 10px 2px;}
+.btn.small.danger{color:var(--text-dim);}
+.btn.small.danger:hover{color:#fff; border-color:var(--coral); background:var(--coral);}
+.lernzettel-textarea{width:100%; min-height:220px; background:var(--bg-elevated); border:1px solid var(--border); border-radius:12px; padding:14px; color:var(--text); font-size:13.5px; font-family:inherit; line-height:1.6; resize:vertical;}
 
 /* Achievements */
 .ach-card{text-align:center; padding:20px 14px;}
@@ -339,7 +345,7 @@ body.lockin-active .nav-item, body.lockin-active .topbar, body.lockin-active .bo
         <h1 class="font-display" style="font-size:22px;">Klausuren</h1>
         <button class="btn" onclick="openExamModal()">+ Neue Klausur</button>
       </div>
-      <div class="grid" id="examList"></div>
+      <div id="examList"></div>
     </div>
 
     <!-- FOCUS -->
@@ -490,6 +496,18 @@ body.lockin-active .nav-item, body.lockin-active .topbar, body.lockin-active .bo
   </div>
 </div>
 
+<!-- DELETE EXAM CONFIRM -->
+<div class="modal-overlay" id="deleteExamConfirmOverlay">
+  <div class="modal">
+    <h3>Klausur wirklich löschen?</h3>
+    <p style="color:var(--text-dim); font-size:13px; margin:10px 0 0;">Der Lernplan und ein evtl. gespeicherter Lernzettel dieser Klausur gehen dabei unwiderruflich verloren.</p>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeDeleteExamConfirm()">Abbrechen</button>
+      <button class="btn" style="background:var(--coral);" onclick="confirmDeleteExam()">Ja, löschen</button>
+    </div>
+  </div>
+</div>
+
 
 <!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
@@ -620,17 +638,26 @@ function taskCardHtml(t){
   </div>`;
 }
 
-function examCardHtml(e){
+function examCardHtml(e, isPast){
   const d = daysUntil(e.date);
-  const cls = urgencyClass(e.date);
+  const cls = isPast ? 'past' : urgencyClass(e.date);
+  const hasNotes = e.notes && e.notes.trim().length>0;
+  const dateLabel = new Date(e.date+'T00:00:00').toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit', year:'numeric'});
   return `<div class="card exam-card ${cls}">
     <div class="tag">${SUBJECT_ICONS[e.subject]||'📘'} ${e.subject}</div>
     <div class="task-title">${e.title}</div>
-    <div class="exam-days ${cls}">${d<0?'überfällig':(d===0?'heute':d+' Tage')}</div>
-    <div class="bar-track"><div class="bar-fill" style="width:${e.progress}%"></div></div>
-    <div style="display:flex; justify-content:space-between; margin-top:10px;">
-      <span style="font-size:11.5px; color:var(--text-dim);">${e.progress}% vorbereitet</span>
-      <button class="btn small ghost" onclick="viewStudyPlan(${e.id})">Lernplan</button>
+    ${isPast
+      ? `<div class="exam-days past">📁 ${dateLabel}</div>`
+      : `<div class="exam-days ${cls}">${d===0?'heute':d+' Tage'}</div>
+         <div class="bar-track"><div class="bar-fill" style="width:${e.progress}%"></div></div>`
+    }
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; gap:6px; flex-wrap:wrap;">
+      <span style="font-size:11.5px; color:var(--text-dim);">${isPast ? (hasNotes?'📄 Lernzettel vorhanden':'Kein Lernzettel') : e.progress+'% vorbereitet'}</span>
+      <div style="display:flex; gap:6px;">
+        ${!isPast ? `<button class="btn small ghost" onclick="viewStudyPlan(${e.id})">Lernplan</button>` : ''}
+        <button class="btn small ghost" onclick="openExamNotes(${e.id})">${hasNotes?'📄 Lernzettel':'+ Lernzettel'}</button>
+        <button class="btn small ghost danger" onclick="requestDeleteExam(${e.id})" title="Klausur löschen">🗑</button>
+      </div>
     </div>
   </div>`;
 }
