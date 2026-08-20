@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SchoolOS</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap');
+
+:root{
+  --bg: #0a0c14;
+  --bg-elevated: #10131e;
+  --surface: #161a29;
+  --surface-hi: #1d2236;
+  --border: #262c42;
+  --text: #eef0fb;
+  --text-dim: #9aa1c2;
+  --text-faint: #616a8d;
+  --violet: #8b6bff;
+  --cyan: #34d5ee;
+  --gold: #f5b942;
+  --coral: #ff5c7c;
+  --amber: #ff9d4d;
+  --mint: #34d399;
+  --grad: linear-gradient(90deg, var(--violet), var(--cyan));
+  --radius: 16px;
+  --radius-sm: 10px;
+  font-family: 'Inter', sans-serif;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+.app{
+  background: radial-gradient(1200px 600px at 15% -10%, #1c1440 0%, transparent 60%),
+              radial-gradient(900px 500px at 100% 0%, #0d2438 0%, transparent 55%),
+              var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display:flex;
+  position:relative;
+  overflow-x:hidden;
+}
+h1,h2,h3,.font-display{font-family:'Space Grotesk',sans-serif;}
+.mono{font-family:'JetBrains Mono',monospace;}
+button{font-family:inherit; cursor:pointer; border:none;}
+::selection{background:var(--violet); color:#fff;}
+
+/* ---------- SIDEBAR ---------- */
+.sidebar{
+  width:230px; flex-shrink:0; padding:22px 14px; border-right:1px solid var(--border);
+  display:flex; flex-direction:column; gap:4px; position:sticky; top:0; height:100vh;
+}
+.brand{display:flex; align-items:center; gap:10px; padding:6px 10px 22px 10px;}
+.brand-mark{width:30px; height:30px; border-radius:9px; background:var(--grad); display:flex; align-items:center; justify-content:center; font-size:16px; box-shadow:0 0 18px rgba(139,107,255,.5);}
+.brand-name{font-family:'Space Grotesk'; font-weight:700; font-size:17px; letter-spacing:.2px;}
+.nav-item{
+  display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:11px;
+  color:var(--text-dim); font-size:14px; font-weight:600; background:none; text-align:left; width:100%;
+  transition:background .15s, color .15s;
+}
+.nav-item:hover{background:var(--surface); color:var(--text);}
+.nav-item.active{background:var(--surface-hi); color:var(--text); box-shadow:inset 0 0 0 1px var(--border);}
+.nav-item .ic{width:18px; text-align:center; font-size:15px;}
+.sidebar-foot{margin-top:auto; padding:12px 10px; border-top:1px solid var(--border); font-size:12px; color:var(--text-faint);}
+
+/* ---------- MAIN ---------- */
+.main{flex:1; padding:30px 34px 100px 34px; max-width:1180px;}
+.view{display:none; animation:fadein .35s ease;}
+.view.active{display:block;}
+@keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+.hero-row{display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:22px; flex-wrap:wrap; gap:16px;}
+.greet{font-family:'Space Grotesk'; font-size:26px; font-weight:700;}
+.greet-sub{color:var(--text-dim); font-size:13.5px; margin-top:4px;}
+.streak-pill{display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--border); padding:9px 15px; border-radius:100px; font-size:14px; font-weight:600;}
+
+/* HUD XP bar - signature element */
+.hud{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  padding:18px 22px; margin-bottom:26px; position:relative; overflow:hidden;
+}
+.hud::before{content:''; position:absolute; inset:0; background:radial-gradient(400px 120px at 0% 0%, rgba(139,107,255,.15), transparent);}
+.hud-top{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; position:relative;}
+.hud-level{font-family:'Space Grotesk'; font-weight:700; font-size:16px; display:flex; align-items:center; gap:9px;}
+.hud-level .badge{background:var(--grad); color:#0a0c14; font-size:12px; padding:3px 10px; border-radius:100px; font-weight:700;}
+.hud-xp-label{font-size:12.5px; color:var(--text-dim);}
+.hud-track{height:14px; border-radius:100px; background:var(--bg-elevated); border:1px solid var(--border); overflow:hidden; position:relative;}
+.hud-fill{height:100%; border-radius:100px; background:var(--grad); position:relative; transition:width .6s cubic-bezier(.2,.8,.2,1);}
+.hud-fill::after{content:''; position:absolute; inset:0; background:repeating-linear-gradient(115deg, rgba(255,255,255,.18) 0 8px, transparent 8px 16px); animation:hudmove 1.4s linear infinite;}
+@keyframes hudmove{from{background-position:0 0;} to{background-position:40px 0;}}
+
+/* Cards */
+.section-title{font-family:'Space Grotesk'; font-size:15px; font-weight:700; margin:28px 0 12px 0; display:flex; align-items:center; gap:8px; justify-content:space-between;}
+.grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(230px,1fr)); gap:14px;}
+.card{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm);
+  padding:16px; transition:transform .15s, border-color .15s;
+}
+.card:hover{border-color:#37406a; transform:translateY(-2px);}
+.task-card.done{opacity:.45;}
+.task-card .tag{font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.5px; font-weight:700;}
+.task-title{font-weight:700; font-size:14.5px; margin:6px 0 3px 0;}
+.task-desc{font-size:12.5px; color:var(--text-dim); margin-bottom:12px;}
+.task-foot{display:flex; justify-content:space-between; align-items:center;}
+.xp-chip{font-size:12px; font-weight:700; color:var(--gold); font-family:'JetBrains Mono';}
+.btn{padding:7px 14px; border-radius:9px; font-size:12.5px; font-weight:700; background:var(--grad); color:#0a0c14;}
+.btn:hover{filter:brightness(1.08);}
+.btn.ghost{background:var(--surface-hi); color:var(--text); border:1px solid var(--border);}
+.btn.small{padding:5px 10px; font-size:11.5px;}
+.btn:disabled{opacity:.5; cursor:default;}
+
+/* Exam radar */
+.exam-card{border-left:3px solid var(--mint);}
+.exam-card.urgent{border-left-color:var(--coral);}
+.exam-card.soon{border-left-color:var(--amber);}
+.exam-days{font-size:12px; font-weight:700; margin:4px 0 10px 0;}
+.exam-days.urgent{color:var(--coral);}
+.exam-days.soon{color:var(--amber);}
+.exam-days.ok{color:var(--mint);}
+.bar-track{height:8px; border-radius:100px; background:var(--bg-elevated); overflow:hidden;}
+.bar-fill{height:100%; border-radius:100px; background:var(--grad);}
+
+/* Achievements */
+.ach-card{text-align:center; padding:20px 14px;}
+.ach-card.locked{opacity:.35; filter:grayscale(1);}
+.ach-icon{font-size:28px; margin-bottom:8px;}
+.ach-name{font-weight:700; font-size:13.5px;}
+.ach-desc{font-size:11.5px; color:var(--text-dim); margin-top:4px;}
+
+/* Forms */
+.field{margin-bottom:12px;}
+.field label{display:block; font-size:12px; color:var(--text-dim); margin-bottom:5px; font-weight:600;}
+.field input, .field select, .field textarea{
+  width:100%; background:var(--bg-elevated); border:1px solid var(--border); border-radius:9px;
+  padding:9px 11px; color:var(--text); font-size:13.5px; font-family:inherit;
+}
+.field textarea{resize:vertical; min-height:60px;}
+.form-row{display:flex; gap:12px;}
+.form-row .field{flex:1;}
+.modal-overlay{position:fixed; inset:0; background:rgba(6,7,12,.6); backdrop-filter:blur(3px); display:none; align-items:center; justify-content:center; z-index:50;}
+.modal-overlay.show{display:flex;}
+.modal{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:22px; width:420px; max-width:92vw; max-height:88vh; overflow-y:auto;}
+.modal h3{font-family:'Space Grotesk'; margin-bottom:16px;}
+.modal-actions{display:flex; justify-content:flex-end; gap:10px; margin-top:16px;}
+
+/* Filters/pills row */
+.pill-row{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;}
+.pill{background:var(--surface); border:1px solid var(--border); padding:6px 13px; border-radius:100px; font-size:12.5px; font-weight:600; color:var(--text-dim);}
+.pill.active{background:var(--grad); color:#0a0c14; border-color:transparent;}
+
+/* Subjects */
+.subj-icon{font-size:22px;}
+.stat-row{display:flex; justify-content:space-between; font-size:12px; color:var(--text-dim); margin-top:4px;}
+.stat-row b{color:var(--text); font-family:'JetBrains Mono';}
+
+/* Focus mode */
+.focus-wrap{display:flex; flex-direction:column; align-items:center; padding:50px 20px; text-align:center;}
+.focus-timer{font-family:'JetBrains Mono'; font-size:64px; font-weight:700; margin:24px 0; background:var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent;}
+.focus-ring{width:220px; height:220px; border-radius:50%; border:6px solid var(--border); display:flex; align-items:center; justify-content:center; position:relative;}
+.focus-controls{display:flex; gap:10px; margin-top:26px;}
+
+/* Toasts */
+#toastWrap{position:fixed; bottom:24px; right:24px; display:flex; flex-direction:column; gap:10px; z-index:100;}
+.toast{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:13px 18px; font-size:13.5px; font-weight:600; box-shadow:0 10px 30px rgba(0,0,0,.4); animation:toastin .3s ease, toastout .3s ease 2.7s forwards; display:flex; align-items:center; gap:10px;}
+.toast.level{border-color:var(--gold); box-shadow:0 0 30px rgba(245,185,66,.25);}
+@keyframes toastin{from{transform:translateX(30px); opacity:0;} to{transform:translateX(0); opacity:1;}}
+@keyframes toastout{to{transform:translateX(30px); opacity:0;}}
+
+/* Profile */
+.profile-head{display:flex; align-items:center; gap:18px; margin-bottom:24px;}
+.avatar{width:64px; height:64px; border-radius:18px; background:var(--grad); display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk'; font-weight:700; font-size:24px; color:#0a0c14;}
+.stat-tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-top:18px;}
+.stat-tile{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px;}
+.stat-tile .v{font-family:'JetBrains Mono'; font-size:20px; font-weight:700;}
+.stat-tile .l{font-size:11.5px; color:var(--text-dim); margin-top:2px;}
+
+/* Bottom nav mobile */
+.bottom-nav{display:none;}
+@media (max-width:880px){
+  .sidebar{display:none;}
+  .main{padding:18px 16px 90px 16px;}
+  .bottom-nav{
+    display:flex; position:fixed; bottom:0; left:0; right:0; background:var(--bg-elevated);
+    border-top:1px solid var(--border); z-index:40; padding:8px 4px;
+  }
+  .bottom-nav .nav-item{flex-direction:column; font-size:9.5px; gap:3px; padding:6px 2px; text-align:center;}
+  .bottom-nav .nav-item .ic{font-size:17px;}
+}
+
+
+/* ---------- LOCK-IN OVERLAY ---------- */
+.lockin-overlay{
+  display:none; position:fixed; inset:0; z-index:500;
+  background: radial-gradient(1200px 600px at 50% -10%, #23164d 0%, transparent 60%), rgba(6,7,14,.97);
+  align-items:center; justify-content:center; text-align:center; backdrop-filter: blur(6px);
+}
+.lockin-overlay.show{display:flex;}
+.lockin-card{width:360px; max-width:90vw;}
+.lockin-lock{font-size:34px; margin-bottom:8px; filter:drop-shadow(0 0 18px rgba(139,124,255,.5));}
+body.lockin-active .nav-item, body.lockin-active .topbar, body.lockin-active .bottom-nav{
+  pointer-events:none; filter:blur(2px); opacity:.35;
+}
+
+/* ---------- AUTH SCREEN ---------- */
+#authScreen{
+  min-height:100vh; display:flex; align-items:center; justify-content:center;
+  background: radial-gradient(1200px 600px at 15% -10%, #1c1440 0%, transparent 60%),
+              radial-gradient(900px 500px at 100% 0%, #0d2438 0%, transparent 55%),
+              var(--bg);
+  color:var(--text); padding:20px;
+}
+.auth-card{width:380px; max-width:100%; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:30px;}
+.auth-brand{display:flex; align-items:center; gap:10px; margin-bottom:22px;}
+.auth-title{font-family:'Space Grotesk'; font-weight:700; font-size:20px; margin-bottom:4px;}
+.auth-sub{color:var(--text-dim); font-size:13px; margin-bottom:20px;}
+.auth-error{background:rgba(255,92,124,.12); border:1px solid var(--coral); color:var(--coral); font-size:12.5px; padding:9px 12px; border-radius:9px; margin-bottom:14px; display:none;}
+.auth-error.show{display:block;}
+.auth-info{background:rgba(52,211,153,.12); border:1px solid var(--mint); color:var(--mint); font-size:12.5px; padding:9px 12px; border-radius:9px; margin-bottom:14px; display:none;}
+.auth-info.show{display:block;}
+.auth-mode-group{display:flex; background:var(--surface-hi); border:1px solid var(--border); border-radius:10px; padding:3px; margin-bottom:18px;}
+.auth-mode-btn{flex:1; padding:9px 0; border-radius:8px; border:none; background:transparent; color:var(--text-dim); font-weight:600; font-size:13px; cursor:pointer; font-family:inherit;}
+.auth-mode-btn.active{background:var(--violet); color:#fff;}
+.auth-switch{text-align:center; font-size:12.5px; color:var(--text-dim); margin-top:16px;}
+.auth-switch a, .auth-forgot{color:var(--cyan); font-weight:600; cursor:pointer; text-decoration:none;}
+.auth-forgot{display:block; text-align:right; font-size:12px; margin:-6px 0 14px 0;}
+.auth-submit{width:100%; padding:11px; border-radius:10px; font-size:14px; margin-top:4px;}
+.auth-loading{opacity:.6; pointer-events:none;}
+#userBadge{display:flex; align-items:center; justify-content:space-between; gap:8px;}
+#userBadge .logout-btn{background:var(--surface-hi); border:1px solid var(--border); color:var(--text-dim); font-size:11px; padding:5px 9px; border-radius:8px; font-weight:600;}
+#userBadge .logout-btn:hover{color:var(--coral); border-color:var(--coral);}
+#saveIndicator{font-size:10.5px; color:var(--text-faint); margin-top:4px;}
+</style>
+</head>
+<body>
+
+<div id="authScreen">
+  <div class="auth-card">
+    <div class="auth-brand"><div class="brand-mark">⚡</div><div class="brand-name font-display" style="font-size:18px;">SchoolOS</div></div>
+    <div class="auth-mode-group" id="authModeGroup">
+      <button class="auth-mode-btn active" id="authModeLoginBtn" onclick="setAuthMode('login')">Anmelden</button>
+      <button class="auth-mode-btn" id="authModeRegisterBtn" onclick="setAuthMode('register')">Registrieren</button>
+    </div>
+
+    <div class="auth-title" id="authTitle">Willkommen zurück</div>
+    <div class="auth-sub" id="authSub">Melde dich an, um weiterzulernen.</div>
+
+    <div class="auth-error" id="authError"></div>
+    <div class="auth-info" id="authInfo"></div>
+
+    <div class="field" id="authNameField" style="display:none;">
+      <label>Name</label>
+      <input id="authName" placeholder="Wie sollen wir dich nennen?"/>
+    </div>
+    <div class="field">
+      <label>E-Mail</label>
+      <input id="authEmail" type="email" placeholder="du@beispiel.de"/>
+    </div>
+    <div class="field">
+      <label>Passwort</label>
+      <input id="authPassword" type="password" placeholder="Mind. 6 Zeichen"/>
+    </div>
+    <a class="auth-forgot" id="authForgotLink" onclick="handlePasswordReset()">Passwort vergessen?</a>
+
+    <button class="btn auth-submit" id="authSubmitBtn" onclick="handleAuthSubmit()">Anmelden</button>
+
+    <div class="auth-switch" id="authSwitch">
+      Noch keinen Account? <a onclick="setAuthMode('register')">Jetzt registrieren</a>
+    </div>
+  </div>
+</div>
+
+
+<div class="app" id="mainApp" style="display:none;">
+  <div class="sidebar" id="sidebar">
+    <div class="brand"><div class="brand-mark">⚡</div><div class="brand-name">SchoolOS</div></div>
+    <button class="nav-item active" data-view="dashboard"><span class="ic">🏠</span>Dashboard</button>
+    <button class="nav-item" data-view="tasks"><span class="ic">✅</span>Aufgaben</button>
+    <button class="nav-item" data-view="exams"><span class="ic">🚨</span>Klausuren</button>
+    <button class="nav-item" data-view="focus"><span class="ic">🧠</span>Lernen</button>
+    <button class="nav-item" data-view="subjects"><span class="ic">📚</span>Fächer</button>
+    <button class="nav-item" data-view="achievements"><span class="ic">🏆</span>Achievements</button>
+    <button class="nav-item" data-view="profile"><span class="ic">👤</span>Profil</button>
+    <div class="sidebar-foot">
+      <div id="userBadge">
+        <span id="userBadgeEmail" class="mono" style="font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
+        <button class="logout-btn" onclick="logout()">Abmelden</button>
+      </div>
+      <div id="saveIndicator">Gespeichert</div>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- DASHBOARD -->
+    <div class="view active" id="view-dashboard">
+      <div class="hero-row">
+        <div>
+          <div class="greet" id="greetText">👋 Hey, Alex</div>
+          <div class="greet-sub">Hier ist dein Fortschritt für heute.</div>
+        </div>
+        <div class="streak-pill">🔥 <span id="streakCount">0</span> Tage Streak</div>
+      </div>
+
+      <div class="hud">
+        <div class="hud-top">
+          <div class="hud-level"><span class="badge" id="hudLevelBadge">Level 1</span><span id="hudLevelNext">→ Level 2</span></div>
+          <div class="hud-xp-label mono"><span id="hudXpCur">0</span> / <span id="hudXpMax">100</span> XP</div>
+        </div>
+        <div class="hud-track"><div class="hud-fill" id="hudFill" style="width:0%"></div></div>
+      </div>
+
+      <div class="section-title">Heute <span class="pill" id="todayCountPill">0 offen</span></div>
+      <div class="grid" id="todayTasks"></div>
+
+      <div class="section-title">🚨 Nächste Klausuren</div>
+      <div class="grid" id="dashExams"></div>
+
+      <div class="section-title">🏆 Dein nächstes Achievement</div>
+      <div class="grid" id="dashAchievement"></div>
+    </div>
+
+    <!-- TASKS -->
+    <div class="view" id="view-tasks">
+      <div class="hero-row">
+        <h1 class="font-display" style="font-size:22px;">Aufgaben</h1>
+        <button class="btn" onclick="openTaskModal()">+ Neue Aufgabe</button>
+      </div>
+      <div class="pill-row" id="taskFilters">
+        <button class="pill active" data-f="all">Alle</button>
+        <button class="pill" data-f="today">Heute</button>
+        <button class="pill" data-f="week">Diese Woche</button>
+        <button class="pill" data-f="overdue">Überfällig</button>
+        <button class="pill" data-f="done">Erledigt</button>
+      </div>
+      <div class="grid" id="taskList"></div>
+    </div>
+
+    <!-- EXAMS -->
+    <div class="view" id="view-exams">
+      <div class="hero-row">
+        <h1 class="font-display" style="font-size:22px;">Klausuren</h1>
+        <button class="btn" onclick="openExamModal()">+ Neue Klausur</button>
+      </div>
+      <div class="grid" id="examList"></div>
+    </div>
+
+    <!-- FOCUS -->
+    <div class="view" id="view-focus">
+      <h1 class="font-display" style="font-size:22px; margin-bottom:16px;">Lernmodus</h1>
+      <div class="focus-wrap" id="focusIdle">
+        <div class="field" style="width:280px;"><label>Fach</label>
+          <select id="focusSubject"></select>
+        </div>
+        <div class="field" style="width:280px;"><label>Thema</label>
+          <input id="focusTopic" placeholder="z. B. Kurvendiskussion"/>
+        </div>
+        <div class="field" style="width:280px;"><label>Dauer</label>
+          <select id="focusDuration">
+            <option value="15">15 Minuten</option>
+            <option value="25" selected>25 Minuten</option>
+            <option value="45">45 Minuten</option>
+          </select>
+        </div>
+        <div class="field" style="width:280px;">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" id="focusLockIn" style="width:16px; height:16px; accent-color:var(--violet);"/>
+            🔒 Lock-In Modus (blendet Ablenkungen während der Session aus)
+          </label>
+        </div>
+        <button class="btn" style="margin-top:8px;" onclick="startFocus()">🧠 Lernen starten</button>
+      </div>
+      <div class="focus-wrap" id="focusActive" style="display:none;">
+        <div id="focusHeading" style="color:var(--text-dim); font-weight:600;"></div>
+        <div class="focus-ring"><div class="focus-timer" id="focusTimer">25:00</div></div>
+        <div class="focus-controls">
+          <button class="btn ghost" id="focusPauseBtn" onclick="pauseFocus()">Pause</button>
+          <button class="btn ghost" onclick="requestEndFocus()">Beenden</button>
+        </div>
+      </div>
+      <div class="focus-wrap" id="focusDone" style="display:none;">
+        <div style="font-size:44px;">🎉</div>
+        <h2 class="font-display" style="margin:10px 0;">Session abgeschlossen!</h2>
+        <div class="xp-chip" style="font-size:16px;" id="focusXpEarned">+50 XP</div>
+        <div style="color:var(--text-dim); margin-top:8px;" id="focusSummary"></div>
+        <button class="btn" style="margin-top:20px;" onclick="resetFocus()">Neue Session</button>
+      </div>
+    </div>
+
+    <!-- LOCK-IN OVERLAY -->
+    <div class="lockin-overlay" id="lockinOverlay">
+      <div class="lockin-card">
+        <div class="lockin-lock">🔒</div>
+        <div id="lockinHeading" style="color:var(--text-dim); font-weight:600; font-size:13px; letter-spacing:.02em; text-transform:uppercase;"></div>
+        <div class="focus-ring" style="margin:18px auto;"><div class="focus-timer" id="lockinTimer">25:00</div></div>
+        <div style="color:var(--text-faint); font-size:12.5px; max-width:320px; margin:0 auto 18px;">
+          Lock-In ist aktiv — Navigation ist gesperrt, bis die Session vorbei ist. Bleib dran! 💪
+        </div>
+        <div class="focus-controls">
+          <button class="btn ghost" id="lockinPauseBtn" onclick="pauseFocus()">Pause</button>
+          <button class="btn ghost" onclick="requestEndFocus()">Vorzeitig beenden</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOCK-IN EXIT CONFIRM -->
+    <div class="modal-overlay" id="lockinConfirmOverlay">
+      <div class="modal">
+        <h3>Session wirklich abbrechen?</h3>
+        <p style="color:var(--text-dim); font-size:13px; margin:10px 0 0;">Dein bisheriger Lernfortschritt in dieser Session geht dabei nicht verloren, aber der Lock-In wird beendet.</p>
+        <div class="modal-actions">
+          <button class="btn ghost" onclick="closeLockinConfirm()">Weiterlernen</button>
+          <button class="btn" style="background:var(--coral);" onclick="confirmEndFocus()">Ja, beenden</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUBJECTS -->
+    <div class="view" id="view-subjects">
+      <h1 class="font-display" style="font-size:22px; margin-bottom:16px;">Fächer</h1>
+      <div class="grid" id="subjectList"></div>
+    </div>
+
+    <!-- ACHIEVEMENTS -->
+    <div class="view" id="view-achievements">
+      <h1 class="font-display" style="font-size:22px; margin-bottom:16px;">Achievements</h1>
+      <div class="grid" id="achList"></div>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="view" id="view-profile">
+      <div class="profile-head">
+        <div class="avatar" id="profAvatar">A</div>
+        <div>
+          <h2 class="font-display" id="profName">Alex</h2>
+          <div style="color:var(--text-dim); font-size:13px;" id="profLevelLine">Level 1 · 0 XP</div>
+        </div>
+      </div>
+      <div class="section-title">Diese Woche</div>
+      <div class="stat-tiles" id="profStats"></div>
+      <div class="section-title">Achievements</div>
+      <div class="grid" id="profAchievements"></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <button class="nav-item active" data-view="dashboard"><span class="ic">🏠</span>Home</button>
+  <button class="nav-item" data-view="tasks"><span class="ic">✅</span>Aufgaben</button>
+  <button class="nav-item" data-view="exams"><span class="ic">🚨</span>Klausuren</button>
+  <button class="nav-item" data-view="focus"><span class="ic">🧠</span>Lernen</button>
+  <button class="nav-item" data-view="profile"><span class="ic">👤</span>Profil</button>
+</div>
+
+<div id="toastWrap"></div>
+
+<!-- TASK MODAL -->
+<div class="modal-overlay" id="taskModalOverlay">
+  <div class="modal">
+    <h3>Neue Aufgabe</h3>
+    <div class="field"><label>Titel</label><input id="taskTitleInput" placeholder="z. B. Mathe Hausaufgaben"/></div>
+    <div class="form-row">
+      <div class="field"><label>Fach</label><select id="taskSubjectInput"></select></div>
+      <div class="field"><label>Priorität</label><select id="taskPriorityInput"><option>Niedrig</option><option selected>Mittel</option><option>Hoch</option></select></div>
+    </div>
+    <div class="field"><label>Beschreibung</label><textarea id="taskDescInput" placeholder="Kurze Beschreibung..."></textarea></div>
+    <div class="form-row">
+      <div class="field"><label>Deadline</label><input type="date" id="taskDeadlineInput"/></div>
+      <div class="field"><label>XP-Belohnung</label><input type="number" id="taskXpInput" value="20"/></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeTaskModal()">Abbrechen</button>
+      <button class="btn" onclick="saveTask()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXAM MODAL -->
+<div class="modal-overlay" id="examModalOverlay">
+  <div class="modal">
+    <h3>Neue Klausur</h3>
+    <div class="form-row">
+      <div class="field"><label>Fach</label><select id="examSubjectInput"></select></div>
+      <div class="field"><label>Datum</label><input type="date" id="examDateInput"/></div>
+    </div>
+    <div class="field"><label>Titel</label><input id="examTitleInput" placeholder="z. B. Analysis"/></div>
+    <div class="field"><label>Themen (eins pro Zeile)</label><textarea id="examTopicsInput" placeholder="Ableitungen&#10;Kurvendiskussion&#10;Extrempunkte&#10;Integralrechnung"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeExamModal()">Abbrechen</button>
+      <button class="btn" onclick="saveExam()">Erstellen & Lernplan generieren</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+
+<script>
+
+/* ============ STATE ============ */
+const SUBJECT_ICONS = {"Mathematik":"📐","Biologie":"🧬","Geschichte":"🌍","Englisch":"🇬🇧","Physik":"⚛️","Deutsch":"📖","Chemie":"🧪"};
+
+const ACHIEVEMENTS_DEF = [
+  {id:"first", icon:"🏆", name:"First Step", desc:"Erste Aufgabe abgeschlossen.", check:s=>s.user.tasksDone>=1},
+  {id:"fire", icon:"🔥", name:"On Fire", desc:"7 Tage Streak erreicht.", check:s=>s.user.streak>=7},
+  {id:"bookworm", icon:"📚", name:"Bookworm", desc:"50 Lernaufgaben abgeschlossen.", check:s=>s.user.tasksDone>=50},
+  {id:"speed", icon:"⚡", name:"Speedrunner", desc:"5 Aufgaben an einem Tag abgeschlossen.", check:s=>s._doneToday>=5},
+  {id:"scholar", icon:"👑", name:"Scholar", desc:"Level 20 erreicht.", check:s=>s.user.level>=20},
+  {id:"perfectweek", icon:"🎯", name:"Perfect Week", desc:"Eine Woche lang alle geplanten Lernaufgaben erledigt.", check:s=>false},
+];
+
+const DEFAULT_SUBJECTS = [
+  {id:"math", name:"Mathematik", tasks:0, done:0, minutes:0, xp:0, exams:0},
+  {id:"bio", name:"Biologie", tasks:0, done:0, minutes:0, xp:0, exams:0},
+  {id:"hist", name:"Geschichte", tasks:0, done:0, minutes:0, xp:0, exams:0},
+  {id:"eng", name:"Englisch", tasks:0, done:0, minutes:0, xp:0, exams:0},
+];
+
+function freshState(name){
+  return {
+    user: { name: name||"Schüler", level:1, xp:0, xpMax:100, streak:0, studyMinutes:0, tasksDone:0, examsDone:0, weekXp:0 },
+    subjects: DEFAULT_SUBJECTS.map(s=>({...s})),
+    tasks: [],
+    exams: [],
+    achievements: ACHIEVEMENTS_DEF.map(a=>({...a, unlocked:false})),
+    studyPlans: {},
+    focus: { running:false, paused:false, secondsLeft:0, totalSeconds:0, subject:"", topic:"", interval:null, lockIn:false },
+    _doneToday: 0,
+  };
+}
+
+let state = freshState("Schüler");
+
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function addDaysISO(n){ const d=new Date(); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+function daysUntil(iso){ const d=new Date(iso); const now=new Date(); now.setHours(0,0,0,0); d.setHours(0,0,0,0); return Math.round((d-now)/86400000); }
+
+/* ============ NAV ============ */
+document.querySelectorAll('.nav-item').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const v = btn.dataset.view;
+    document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active', b.dataset.view===v));
+    document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+    document.getElementById('view-'+v).classList.add('active');
+      });
+});
+
+/* ============ TOASTS ============ */
+function toast(msg, isLevel=false){
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = 'toast' + (isLevel?' level':'');
+  el.innerHTML = msg;
+  wrap.appendChild(el);
+  setTimeout(()=>el.remove(), 3000);
+}
+
+/* ============ XP / LEVEL ============ */
+function grantXp(amount, label){
+  state.user.xp += amount;
+  state.user.weekXp += amount;
+  toast(`⚡ +${amount} XP ${label?('· '+label):''}`);
+  while(state.user.xp >= state.user.xpMax){
+    state.user.xp -= state.user.xpMax;
+    state.user.level += 1;
+    state.user.xpMax = Math.round(state.user.xpMax * 1.15);
+    setTimeout(()=>toast(`🎉 LEVEL UP! Level ${state.user.level} erreicht`, true), 350);
+  }
+  checkAchievements();
+  renderAll();
+}
+
+function checkAchievements(){
+  state.achievements.forEach(a=>{
+    if(!a.unlocked && a.check(state)){
+      a.unlocked = true;
+      setTimeout(()=>toast(`🏆 Achievement freigeschaltet: ${a.name}`), 600);
+    }
+  });
+}
+
+/* ============ RENDER: DASHBOARD ============ */
+function renderDashboard(){
+  document.getElementById('greetText').textContent = `👋 Hey, ${state.user.name}`;
+  document.getElementById('streakCount').textContent = state.user.streak;
+  document.getElementById('hudLevelBadge').textContent = `Level ${state.user.level}`;
+  document.getElementById('hudLevelNext').textContent = `→ Level ${state.user.level+1}`;
+  document.getElementById('hudXpCur').textContent = state.user.xp;
+  document.getElementById('hudXpMax').textContent = state.user.xpMax;
+  document.getElementById('hudFill').style.width = Math.min(100, (state.user.xp/state.user.xpMax*100))+'%';
+
+  const today = state.tasks.filter(t=>t.deadline<=todayISO() && !t.done);
+  document.getElementById('todayCountPill').textContent = `${today.length} offen`;
+  const todayAll = state.tasks.filter(t=>t.deadline<=todayISO());
+  document.getElementById('todayTasks').innerHTML = todayAll.length ? todayAll.map(taskCardHtml).join('') :
+    `<div style="color:var(--text-faint); font-size:13px;">Keine Aufgaben für heute — genieß den Tag 🎉</div>`;
+
+  const sortedExams = [...state.exams].sort((a,b)=>daysUntil(a.date)-daysUntil(b.date)).slice(0,3);
+  document.getElementById('dashExams').innerHTML = sortedExams.map(examCardHtml).join('');
+
+  const nextAch = state.achievements.find(a=>!a.unlocked);
+  document.getElementById('dashAchievement').innerHTML = nextAch ? achCardHtml(nextAch) : `<div style="color:var(--text-faint); font-size:13px;">Alle Achievements freigeschaltet! 👑</div>`;
+}
+
+function urgencyClass(iso){
+  const d = daysUntil(iso);
+  if(d<=3) return 'urgent'; if(d<=7) return 'soon'; return 'ok';
+}
+
+function taskCardHtml(t){
+  return `<div class="card task-card ${t.done?'done':''}">
+    <div class="tag">${t.subject}</div>
+    <div class="task-title">${t.done?'✅ ':''}${t.title}</div>
+    <div class="task-desc">${t.desc||''}</div>
+    <div class="task-foot">
+      <span class="xp-chip">+${t.xp} XP</span>
+      ${t.done ? `<span style="font-size:11.5px;color:var(--mint);font-weight:700;">Erledigt</span>` : `<button class="btn small" onclick="completeTask(${t.id})">Erledigen</button>`}
+    </div>
+  </div>`;
+}
+
+function examCardHtml(e){
+  const d = daysUntil(e.date);
+  const cls = urgencyClass(e.date);
+  return `<div class="card exam-card ${cls}">
+    <div class="tag">${SUBJECT_ICONS[e.subject]||'📘'} ${e.subject}</div>
+    <div class="task-title">${e.title}</div>
+    <div class="exam-days ${cls}">${d<0?'überfällig':(d===0?'heute':d+' Tage')}</div>
+    <div class="bar-track"><div class="bar-fill" style="width:${e.progress}%"></div></div>
+    <div style="display:flex; justify-content:space-between; margin-top:10px;">
+      <span style="font-size:11.5px; color:var(--text-dim);">${e.progress}% vorbereitet</span>
+      <button class="btn small ghost" onclick="viewStudyPlan(${e.id})">Lernplan</button>
+    </div>
+  </div>`;
+}
+
+function achCardHtml(a){
+  return `<div class="card ach-card ${a.unlocked?'':'locked'}">
+    <div class="ach-icon">${a.icon}</div>
+    <div class="ach-name">${a.name}</div>
+    <div class="ach-desc">${a.desc}</div>
+  </div>`;
+}
+
+/* ============ TASKS VIEW ============ */
+let taskFilter = 'all';
+document.getElementById('taskFilters').addEventListener('click', e=>{
+  if(e.target.classList.contains('pill')){
+    document.querySelectorAll('#taskFilters .pill').forEach(p=>p.classList.remove('active'));
+    e.target.classList.add('active');
+    taskFilter = e.target.dataset.f;
+    renderTasksView();
+  }
+});
+
+function renderTasksView(){
+  let list = [...state.tasks];
+  const t = todayISO();
+  if(taskFilter==='today') list = list.filter(x=>x.deadline===t && !x.done);
+  else if(taskFilter==='week') list = list.filter(x=>daysUntil(x.deadline)<=7 && daysUntil(x.deadline)>=0 && !x.done);
+  else if(taskFilter==='overdue') list = list.filter(x=>daysUntil(x.deadline)<0 && !x.done);
+  else if(taskFilter==='done') list = list.filter(x=>x.done);
+  list.sort((a,b)=>a.deadline.localeCompare(b.deadline));
+  document.getElementById('taskList').innerHTML = list.length ? list.map(taskCardHtml).join('') :
+    `<div style="color:var(--text-faint); font-size:13px;">Keine Aufgaben in dieser Ansicht.</div>`;
+}
+
+function completeTask(id){
+  const t = state.tasks.find(x=>x.id===id);
+  if(!t || t.done) return;
+  t.done = true;
+  state.user.tasksDone += 1;
+  state._doneToday += 1;
+  const subj = state.subjects.find(s=>s.name===t.subject);
+  if(subj) subj.done += 1;
+  bumpStreak();
+  grantXp(t.xp, t.title);
+}
+
+function bumpStreak(){
+  if(!state._streakBumpedToday){
+    state.user.streak += 1;
+    state._streakBumpedToday = true;
+  }
+}
+
+function openTaskModal(){
+  const sel = document.getElementById('taskSubjectInput');
+  sel.innerHTML = state.subjects.map(s=>`<option>${s.name}</option>`).join('');
+  document.getElementById('taskTitleInput').value='';
+  document.getElementById('taskDescInput').value='';
+  document.getElementById('taskDeadlineInput').value=todayISO();
+  document.getElementById('taskXpInput').value=20;
+  document.getElementById('taskModalOverlay').classList.add('show');
+}
+function closeTaskModal(){ document.getElementById('taskModalOverlay').classList.remove('show'); }
+function saveTask(){
+  const title = document.getElementById('taskTitleInput').value.trim();
+  if(!title){ toast('Bitte einen Titel eingeben'); return; }
+  state.tasks.push({
+    id: Date.now(),
+    title,
+    subject: document.getElementById('taskSubjectInput').value,
+    desc: document.getElementById('taskDescInput').value,
+    deadline: document.getElementById('taskDeadlineInput').value || todayISO(),
+    priority: document.getElementById('taskPriorityInput').value,
+    xp: parseInt(document.getElementById('taskXpInput').value)||10,
+    done:false
+  });
+  closeTaskModal();
+  renderAll();
+  toast('✅ Aufgabe erstellt');
+}
+
+/* ============ EXAMS VIEW ============ */
+function renderExamsView(){
+  const sorted = [...state.exams].sort((a,b)=>daysUntil(a.date)-daysUntil(b.date));
+  document.getElementById('examList').innerHTML = sorted.map(examCardHtml).join('');
+}
+function openExamModal(){
+  const sel = document.getElementById('examSubjectInput');
+  sel.innerHTML = state.subjects.map(s=>`<option>${s.name}</option>`).join('');
+  document.getElementById('examTitleInput').value='';
+  document.getElementById('examDateInput').value=addDaysISO(7);
+  document.getElementById('examTopicsInput').value='';
+  document.getElementById('examModalOverlay').classList.add('show');
+}
+function closeExamModal(){ document.getElementById('examModalOverlay').classList.remove('show'); }
+function saveExam(){
+  const title = document.getElementById('examTitleInput').value.trim();
+  if(!title){ toast('Bitte einen Titel eingeben'); return; }
+  const topics = document.getElementById('examTopicsInput').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  const exam = {
+    id: Date.now(),
+    subject: document.getElementById('examSubjectInput').value,
+    title,
+    date: document.getElementById('examDateInput').value || addDaysISO(7),
+    progress: 0,
+    topics: topics.length?topics:['Wiederholung']
+  };
+  state.exams.push(exam);
+  generateStudyPlan(exam);
+  closeExamModal();
+  renderAll();
+  toast('📅 Klausur erstellt & Lernplan generiert');
+}
+
+function generateStudyPlan(exam){
+  const days = ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];
+  const plan = [];
+  const topics = exam.topics;
+  const durations = [30,45,30,45,30,60];
+  topics.forEach((topic,i)=>{
+    plan.push({day: days[i % 7], task: topic, minutes: durations[i % durations.length]});
+  });
+  plan.push({day: days[(topics.length) % 7], task:'Wiederholung', minutes:30});
+  plan.push({day: days[(topics.length+1) % 7], task:'Probeklausur', minutes:60});
+  state.studyPlans[exam.id] = plan;
+}
+
+function viewStudyPlan(examId){
+  const exam = state.exams.find(e=>e.id===examId);
+  const plan = state.studyPlans[examId] || [];
+  const html = `<h3>${exam.title} — Lernplan</h3>` + plan.map(p=>`
+    <div style="display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--border); font-size:13.5px;">
+      <span><b>${p.day}</b> — ${p.task}</span><span class="mono" style="color:var(--text-dim);">${p.minutes} Min</span>
+    </div>`).join('') + `<div class="modal-actions"><button class="btn ghost" onclick="closeGenericModal()">Schließen</button></div>`;
+  showGenericModal(html);
+}
+
+/* generic modal for study plan */
+function showGenericModal(innerHtml){
+  let overlay = document.getElementById('genericModalOverlay');
+  if(!overlay){
+    overlay = document.createElement('div');
+    overlay.id='genericModalOverlay'; overlay.className='modal-overlay';
+    overlay.innerHTML = `<div class="modal" id="genericModalBody"></div>`;
+    document.body.appendChild(overlay);
+  }
+  document.getElementById('genericModalBody').innerHTML = innerHtml;
+  overlay.classList.add('show');
+}
+function closeGenericModal(){ document.getElementById('genericModalOverlay').classList.remove('show'); }
+
+/* ============ SUBJECTS VIEW ============ */
+function renderSubjectsView(){
+  document.getElementById('subjectList').innerHTML = state.subjects.map(s=>`
+    <div class="card">
+      <div class="subj-icon">${SUBJECT_ICONS[s.name]||'📘'}</div>
+      <div class="task-title">${s.name}</div>
+      <div class="stat-row"><span>Aufgaben</span><b>${s.tasks}</b></div>
+      <div class="stat-row"><span>Erledigt</span><b>${s.done}</b></div>
+      <div class="stat-row"><span>Lernzeit</span><b>${Math.floor(s.minutes/60)}h ${s.minutes%60}min</b></div>
+      <div class="stat-row"><span>XP</span><b>${s.xp}</b></div>
+      <div class="stat-row"><span>Klausuren</span><b>${s.exams}</b></div>
+    </div>`).join('');
+}
+
+/* ============ ACHIEVEMENTS VIEW ============ */
+function renderAchievementsView(){
+  document.getElementById('achList').innerHTML = state.achievements.map(achCardHtml).join('');
+}
+
+/* ============ FOCUS MODE ============ */
+function populateFocusSubjects(){
+  document.getElementById('focusSubject').innerHTML = state.subjects.map(s=>`<option>${s.name}</option>`).join('');
+}
+function startFocus(){
+  const subject = document.getElementById('focusSubject').value;
+  const topic = document.getElementById('focusTopic').value || 'Allgemein';
+  const minutes = parseInt(document.getElementById('focusDuration').value);
+  const lockIn = document.getElementById('focusLockIn').checked;
+  state.focus.subject = subject; state.focus.topic = topic;
+  state.focus.totalSeconds = minutes*60; state.focus.secondsLeft = minutes*60;
+  state.focus.running = true; state.focus.paused = false;
+  state.focus.lockIn = lockIn;
+  document.getElementById('focusIdle').style.display='none';
+  document.getElementById('focusDone').style.display='none';
+
+  if(lockIn){
+    document.getElementById('focusActive').style.display='none';
+    document.getElementById('lockinHeading').textContent = `🧠 ${subject} · ${topic}`;
+    document.getElementById('lockinOverlay').classList.add('show');
+    document.body.classList.add('lockin-active');
+  } else {
+    document.getElementById('focusActive').style.display='flex';
+    document.getElementById('focusHeading').textContent = `🧠 ${subject} · ${topic}`;
+  }
+
+  tickFocus();
+  state.focus.interval = setInterval(tickFocus, 1000);
+}
+function tickFocus(){
+  if(state.focus.paused) return;
+  if(state.focus.secondsLeft<=0){ endFocus(true); return; }
+  const m = Math.floor(state.focus.secondsLeft/60).toString().padStart(2,'0');
+  const s = (state.focus.secondsLeft%60).toString().padStart(2,'0');
+  const label = `${m}:${s}`;
+  const timerEl = document.getElementById('focusTimer');
+  const lockTimerEl = document.getElementById('lockinTimer');
+  if(timerEl) timerEl.textContent = label;
+  if(lockTimerEl) lockTimerEl.textContent = label;
+  state.focus.secondsLeft -= 1;
+}
+function pauseFocus(){
+  state.focus.paused = !state.focus.paused;
+  const label = state.focus.paused ? 'Weiter' : 'Pause';
+  const btn = document.getElementById('focusPauseBtn');
+  const lockBtn = document.getElementById('lockinPauseBtn');
+  if(btn) btn.textContent = label;
+  if(lockBtn) lockBtn.textContent = label;
+}
+
+/* Beenden-Klick: bei Lock-In erst Bestätigung einholen, sonst sofort beenden */
+function requestEndFocus(){
+  if(state.focus.lockIn && state.focus.running){
+    document.getElementById('lockinConfirmOverlay').classList.add('show');
+  } else {
+    endFocus(false);
+  }
+}
+function closeLockinConfirm(){
+  document.getElementById('lockinConfirmOverlay').classList.remove('show');
+}
+function confirmEndFocus(){
+  closeLockinConfirm();
+  endFocus(false);
+}
+
+function endFocus(completed){
+  clearInterval(state.focus.interval);
+  document.getElementById('focusActive').style.display='none';
+  document.getElementById('lockinOverlay').classList.remove('show');
+  document.getElementById('lockinConfirmOverlay').classList.remove('show');
+  document.body.classList.remove('lockin-active');
+  const minutesDone = Math.round((state.focus.totalSeconds - Math.max(state.focus.secondsLeft,0))/60);
+  state.user.studyMinutes += minutesDone;
+  const subj = state.subjects.find(s=>s.name===state.focus.subject);
+  if(subj) subj.minutes += minutesDone;
+  if(completed && minutesDone>0){
+    document.getElementById('focusDone').style.display='flex';
+    const xp = Math.max(10, Math.round(minutesDone*2));
+    document.getElementById('focusXpEarned').textContent = `+${xp} XP`;
+    document.getElementById('focusSummary').textContent = `${minutesDone} Minuten gelernt.`;
+    bumpStreak();
+    grantXp(xp, state.focus.topic);
+  } else {
+    resetFocus();
+  }
+  state.focus.running = false;
+  state.focus.lockIn = false;
+}
+function resetFocus(){
+  document.getElementById('focusDone').style.display='none';
+  document.getElementById('focusIdle').style.display='flex';
+  document.getElementById('focusTopic').value='';
+  document.getElementById('focusLockIn').checked = false;
+}
+
+/* ============ PROFILE ============ */
+function renderProfile(){
+  document.getElementById('profAvatar').textContent = state.user.name[0];
+  document.getElementById('profName').textContent = state.user.name;
+  document.getElementById('profLevelLine').textContent = `Level ${state.user.level} · ${state.user.xp} / ${state.user.xpMax} XP`;
+  document.getElementById('profStats').innerHTML = `
+    <div class="stat-tile"><div class="v">${Math.floor(state.user.studyMinutes/60)}h ${state.user.studyMinutes%60}min</div><div class="l">📚 Gelernt</div></div>
+    <div class="stat-tile"><div class="v">${state.user.tasksDone}</div><div class="l">✅ Aufgaben erledigt</div></div>
+    <div class="stat-tile"><div class="v">${state.user.weekXp}</div><div class="l">⚡ XP verdient</div></div>
+    <div class="stat-tile"><div class="v">${state.user.streak}</div><div class="l">🔥 Tage Streak</div></div>
+  `;
+  document.getElementById('profAchievements').innerHTML = state.achievements.map(achCardHtml).join('');
+}
+
+/* ============ RENDER ALL ============ */
+function renderAll(){
+  renderDashboard();
+  populateFocusSubjects();
+  renderTasksView();
+  renderExamsView();
+  renderSubjectsView();
+  renderAchievementsView();
+  renderProfile();
+  scheduleSave();
+}
+
+
+/* ============================================================
+   FIREBASE: Auth + Firestore persistence
+   ============================================================ */
+
+// TODO: Trage hier deine eigene Firebase-Projektkonfiguration ein
+// (Firebase Console → Projekteinstellungen → "Meine Apps" → Web-App → Config)
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCCLMR55EzLEFCVhUnSMlvcv08DXreGIx4",
+  authDomain: "schoolos-c4ae2.firebaseapp.com",
+  projectId: "schoolos-c4ae2",
+  storageBucket: "schoolos-c4ae2.firebasestorage.app",
+  messagingSenderId: "213603116412",
+  appId: "1:213603116412:web:67da33baa61407095370f9"
+};
+
+firebase.initializeApp(FIREBASE_CONFIG);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+let currentUser = null;
+let saveTimer = null;
+let authMode = 'login'; // 'login' | 'register'
+
+/* ---------- Auth screen mode toggle ---------- */
+function setAuthMode(mode){
+  authMode = mode; // 'login' | 'register'
+  const isRegister = authMode === 'register';
+  document.getElementById('authModeLoginBtn').classList.toggle('active', !isRegister);
+  document.getElementById('authModeRegisterBtn').classList.toggle('active', isRegister);
+  document.getElementById('authTitle').textContent = isRegister ? 'Account erstellen' : 'Willkommen zurück';
+  document.getElementById('authSub').textContent = isRegister ? 'Leg los und sammle deine ersten XP.' : 'Melde dich an, um weiterzulernen.';
+  document.getElementById('authNameField').style.display = isRegister ? 'block' : 'none';
+  document.getElementById('authForgotLink').style.display = isRegister ? 'none' : 'block';
+  document.getElementById('authSubmitBtn').textContent = isRegister ? 'Registrieren' : 'Anmelden';
+  document.getElementById('authSwitch').innerHTML = isRegister
+    ? 'Schon einen Account? <a onclick="setAuthMode(\'login\')">Anmelden</a>'
+    : 'Noch keinen Account? <a onclick="setAuthMode(\'register\')">Jetzt registrieren</a>';
+  hideAuthMessages();
+}
+
+function showAuthError(msg){
+  const el = document.getElementById('authError');
+  el.textContent = msg;
+  el.classList.add('show');
+  document.getElementById('authInfo').classList.remove('show');
+}
+function showAuthInfo(msg){
+  const el = document.getElementById('authInfo');
+  el.textContent = msg;
+  el.classList.add('show');
+  document.getElementById('authError').classList.remove('show');
+}
+function hideAuthMessages(){
+  document.getElementById('authError').classList.remove('show');
+  document.getElementById('authInfo').classList.remove('show');
+}
+
+function friendlyAuthError(err){
+  const map = {
+    'auth/invalid-email': 'Diese E-Mail-Adresse ist ungültig.',
+    'auth/user-not-found': 'Kein Account mit dieser E-Mail gefunden.',
+    'auth/wrong-password': 'Falsches Passwort.',
+    'auth/invalid-credential': 'E-Mail oder Passwort ist falsch.',
+    'auth/email-already-in-use': 'Für diese E-Mail existiert bereits ein Account.',
+    'auth/weak-password': 'Das Passwort muss mindestens 6 Zeichen haben.',
+    'auth/too-many-requests': 'Zu viele Versuche. Bitte warte einen Moment.',
+  };
+  return map[err.code] || 'Etwas ist schiefgelaufen. Bitte versuch es erneut.';
+}
+
+async function handleAuthSubmit(){
+  hideAuthMessages();
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const name = document.getElementById('authName').value.trim();
+  const btn = document.getElementById('authSubmitBtn');
+
+  if(!email || !password){ showAuthError('Bitte E-Mail und Passwort ausfüllen.'); return; }
+  if(authMode === 'register' && !name){ showAuthError('Bitte gib deinen Namen ein.'); return; }
+
+  btn.classList.add('auth-loading');
+  try{
+    if(authMode === 'register'){
+      const cred = await auth.createUserWithEmailAndPassword(email, password);
+      await db.collection('users').doc(cred.user.uid).set(serializeState(freshState(name)));
+    } else {
+      await auth.signInWithEmailAndPassword(email, password);
+    }
+    // onAuthStateChanged übernimmt den Rest (Laden + Rendern)
+  } catch(err){
+    showAuthError(friendlyAuthError(err));
+  } finally {
+    btn.classList.remove('auth-loading');
+  }
+}
+
+async function handlePasswordReset(){
+  hideAuthMessages();
+  const email = document.getElementById('authEmail').value.trim();
+  if(!email){ showAuthError('Gib zuerst deine E-Mail-Adresse ein, dann kannst du sie zurücksetzen.'); return; }
+  try{
+    await auth.sendPasswordResetEmail(email);
+    showAuthInfo('E-Mail zum Zurücksetzen des Passworts wurde verschickt.');
+  } catch(err){
+    showAuthError(friendlyAuthError(err));
+  }
+}
+
+function logout(){
+  clearInterval(state.focus.interval);
+  auth.signOut();
+}
+
+/* ---------- Firestore persistence ---------- */
+function serializeState(s){
+  s = s || state;
+  return {
+    user: s.user,
+    subjects: s.subjects,
+    tasks: s.tasks,
+    exams: s.exams,
+    achievementsUnlocked: Object.fromEntries(s.achievements.map(a=>[a.id, a.unlocked])),
+    studyPlans: s.studyPlans,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+}
+
+function applyLoadedState(data){
+  if(!data) return;
+  Object.assign(state.user, data.user||{});
+  if(data.subjects) state.subjects = data.subjects;
+  if(data.tasks) state.tasks = data.tasks;
+  if(data.exams) state.exams = data.exams;
+  if(data.studyPlans) state.studyPlans = data.studyPlans;
+  if(data.achievementsUnlocked){
+    state.achievements.forEach(a=>{ a.unlocked = !!data.achievementsUnlocked[a.id]; });
+  }
+}
+
+function scheduleSave(){
+  if(!currentUser) return;
+  const indicator = document.getElementById('saveIndicator');
+  if(indicator) indicator.textContent = 'Speichert…';
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async ()=>{
+    try{
+      await db.collection('users').doc(currentUser.uid).set(serializeState(), {merge:true});
+      if(indicator) indicator.textContent = 'Gespeichert';
+    } catch(err){
+      if(indicator) indicator.textContent = 'Fehler beim Speichern';
+      console.error('Firestore save failed', err);
+    }
+  }, 800);
+}
+
+/* ---------- Auth state observer ---------- */
+auth.onAuthStateChanged(async (user)=>{
+  if(user){
+    currentUser = user;
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'flex';
+    document.getElementById('userBadgeEmail').textContent = user.email || '';
+
+    try{
+      const doc = await db.collection('users').doc(user.uid).get();
+      if(doc.exists){
+        state = freshState(doc.data()?.user?.name);
+        applyLoadedState(doc.data());
+      } else {
+        state = freshState(user.email ? user.email.split('@')[0] : 'Schüler');
+        await db.collection('users').doc(user.uid).set(serializeState());
+      }
+    } catch(err){
+      console.error('Konnte Nutzerdaten nicht laden', err);
+      toast('⚠️ Daten konnten nicht geladen werden');
+      state = freshState('Schüler');
+    }
+
+    renderAll();
+  } else {
+    currentUser = null;
+    document.getElementById('mainApp').style.display = 'none';
+    document.getElementById('authScreen').style.display = 'flex';
+    document.getElementById('authEmail').value = '';
+    document.getElementById('authPassword').value = '';
+  }
+});
+
+</script>
+</body>
+</html>
