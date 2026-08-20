@@ -1379,7 +1379,7 @@ async function runAiTurn(){
       const result = aiToolExecute(fc.functionCall.name, fc.functionCall.args);
       return { functionResponse: { name: fc.functionCall.name, response: result } };
     });
-    aiChatHistory.push({ role:'function', parts: responseParts });
+    aiChatHistory.push({ role:'user', parts: responseParts });
   }
   return 'Ich habe mehrere Schritte ausgeführt — schau gern kurz in der App nach, ob alles passt!';
 }
