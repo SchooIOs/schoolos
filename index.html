@@ -283,6 +283,7 @@ body.lockin-active .nav-item, body.lockin-active .topbar, body.lockin-active .bo
     <button class="nav-item" data-view="focus"><span class="ic">🧠</span>Lernen</button>
     <button class="nav-item" data-view="subjects"><span class="ic">📚</span>Fächer</button>
     <button class="nav-item" data-view="achievements"><span class="ic">🏆</span>Achievements</button>
+    <button class="nav-item" data-view="ai-entry"><span class="ic">🤖</span>KI-Eintrag</button>
     <button class="nav-item" data-view="profile"><span class="ic">👤</span>Profil</button>
     <div class="sidebar-foot">
       <div id="userBadge">
@@ -420,7 +421,10 @@ body.lockin-active .nav-item, body.lockin-active .topbar, body.lockin-active .bo
 
     <!-- SUBJECTS -->
     <div class="view" id="view-subjects">
-      <h1 class="font-display" style="font-size:22px; margin-bottom:16px;">Fächer</h1>
+      <div class="hero-row">
+        <h1 class="font-display" style="font-size:22px;">Fächer</h1>
+        <button class="btn" onclick="openSubjectModal()">+ Neues Fach</button>
+      </div>
       <div class="grid" id="subjectList"></div>
     </div>
 
@@ -428,6 +432,17 @@ body.lockin-active .nav-item, body.lockin-active .topbar, body.lockin-active .bo
     <div class="view" id="view-achievements">
       <h1 class="font-display" style="font-size:22px; margin-bottom:16px;">Achievements</h1>
       <div class="grid" id="achList"></div>
+    </div>
+
+    <!-- KI-EINTRAG -->
+    <div class="view" id="view-ai-entry">
+      <h1 class="font-display" style="font-size:22px; margin-bottom:6px;">🤖 KI-Eintrag</h1>
+      <div style="color:var(--text-dim); font-size:13px; margin-bottom:16px; max-width:560px;">Schreib in einem Satz, wann und worüber du eine Klausur schreibst — die KI erkennt Fach, Datum und Thema und trägt die Klausur für dich ein.</div>
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:22px; max-width:560px;">
+        <textarea id="aiEntryInput" class="lernzettel-textarea" style="min-height:100px;" placeholder="z. B. Ich schreibe am 12.3.26 eine Biologie Klausur über Zellbiologie und Mitose"></textarea>
+        <button class="btn" id="aiEntryBtn" style="margin-top:14px;" onclick="parseExamFromAI()">✨ Klausur erkennen lassen</button>
+        <div id="aiEntryStatus" style="margin-top:10px; font-size:12.5px; color:var(--text-dim);"></div>
+      </div>
     </div>
 
     <!-- PROFILE -->
@@ -518,6 +533,11 @@ body.lockin-active .nav-item, body.lockin-active .topbar, body.lockin-active .bo
 
 /* ============ STATE ============ */
 const SUBJECT_ICONS = {"Mathematik":"📐","Biologie":"🧬","Geschichte":"🌍","Englisch":"🇬🇧","Physik":"⚛️","Deutsch":"📖","Chemie":"🧪"};
+function subjectIcon(name){
+  const s = state.subjects.find(x=>x.name===name);
+  if(s && s.icon) return s.icon;
+  return SUBJECT_ICONS[name] || '📘';
+}
 
 const ACHIEVEMENTS_DEF = [
   {id:"first", icon:"🏆", name:"First Step", desc:"Erste Aufgabe abgeschlossen.", check:s=>s.user.tasksDone>=1},
@@ -644,7 +664,7 @@ function examCardHtml(e, isPast){
   const hasNotes = e.notes && e.notes.trim().length>0;
   const dateLabel = new Date(e.date+'T00:00:00').toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit', year:'numeric'});
   return `<div class="card exam-card ${cls}">
-    <div class="tag">${SUBJECT_ICONS[e.subject]||'📘'} ${e.subject}</div>
+    <div class="tag">${subjectIcon(e.subject)} ${e.subject}</div>
     <div class="task-title">${e.title}</div>
     ${isPast
       ? `<div class="exam-days past">📁 ${dateLabel}</div>`
@@ -826,6 +846,105 @@ function confirmDeleteExam(){
   toast('🗑 Klausur gelöscht');
 }
 
+/* ============ KI-EINTRAG (Gemini API, kostenloser Free-Tier) ============ */
+// Kostenlosen Key erstellen unter https://aistudio.google.com/apikey (kein Kreditkarte nötig)
+const GEMINI_API_KEY = "AQ.Ab8RN6JTXz9G-Pqg1Lxl764WebYUwKVHpQ_VmbDRq1WKegsHFQ";
+const GEMINI_MODEL = "gemini-2.5-flash";
+
+async function parseExamFromAI(){
+  const input = document.getElementById('aiEntryInput');
+  const text = input.value.trim();
+  const statusEl = document.getElementById('aiEntryStatus');
+  const btn = document.getElementById('aiEntryBtn');
+  if(!text){ statusEl.textContent = 'Bitte erst einen Satz eingeben.'; return; }
+  if(!GEMINI_API_KEY || GEMINI_API_KEY.startsWith('DEIN_')){
+    statusEl.textContent = '⚠️ Es wurde noch kein Gemini-API-Key eingetragen (siehe README).';
+    return;
+  }
+
+  statusEl.textContent = '⏳ KI liest deinen Text...';
+  btn.disabled = true;
+
+  const subjectNames = state.subjects.map(s=>s.name).join(', ');
+  const prompt = `Du bist ein Assistent, der aus einem deutschen Satz Informationen zu einer bevorstehenden Schulklausur extrahiert.
+Heutiges Datum: ${todayISO()} (Format JJJJ-MM-TT).
+Verfügbare Fächer in der App: ${subjectNames}. Wähle das Fach aus dieser Liste, das am besten passt, auch bei ungenauer oder abweichender Schreibweise.
+Antworte AUSSCHLIESSLICH mit einem JSON-Objekt in genau diesem Format, ohne weiteren Text, ohne Markdown:
+{"subject": "eines der verfügbaren Fächer", "title": "kurzer Titel für die Klausur", "date": "JJJJ-MM-TT", "topics": ["Thema 1", "Thema 2"]}
+
+Der Satz: "${text}"`;
+
+  try{
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
+      method: 'POST',
+      headers: {
+        'Content-Type':'application/json',
+        'X-goog-api-key': GEMINI_API_KEY
+      },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: "application/json", temperature: 0.2 }
+      })
+    });
+    if(!res.ok){
+      const errText = await res.text();
+      console.error('Gemini API Fehler', res.status, errText);
+      throw new Error('HTTP '+res.status);
+    }
+    const data = await res.json();
+    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if(!raw) throw new Error('Keine verwertbare Antwort erhalten');
+    const parsed = JSON.parse(raw);
+    statusEl.textContent = '';
+    showExamAIConfirm(parsed);
+  } catch(err){
+    console.error(err);
+    statusEl.textContent = '⚠️ Konnte den Text nicht auswerten. Versuch es nochmal oder formuliere den Satz etwas anders.';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function showExamAIConfirm(parsed){
+  const subjectOptions = state.subjects.map(s=>
+    `<option ${s.name===parsed.subject?'selected':''}>${s.name}</option>`).join('');
+  const safeTitle = (parsed.title||'').replace(/"/g,'&quot;');
+  const safeDate = /^\d{4}-\d{2}-\d{2}$/.test(parsed.date||'') ? parsed.date : todayISO();
+  const html = `
+    <h3>🤖 Erkannt — bitte kurz prüfen</h3>
+    <div style="color:var(--text-dim); font-size:12.5px; margin:6px 0 14px;">Die KI kann sich irren — passe bei Bedarf an, bevor du übernimmst.</div>
+    <div class="form-row">
+      <div class="field"><label>Fach</label><select id="aiConfirmSubject">${subjectOptions}</select></div>
+      <div class="field"><label>Datum</label><input type="date" id="aiConfirmDate" value="${safeDate}"/></div>
+    </div>
+    <div class="field"><label>Titel</label><input id="aiConfirmTitle" value="${safeTitle}"/></div>
+    <div class="field"><label>Themen (eins pro Zeile)</label><textarea id="aiConfirmTopics">${(parsed.topics||[]).join('\n')}</textarea></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeGenericModal()">Abbrechen</button>
+      <button class="btn" onclick="confirmAIExam()">✅ Klausur eintragen</button>
+    </div>`;
+  showGenericModal(html);
+}
+
+function confirmAIExam(){
+  const title = document.getElementById('aiConfirmTitle').value.trim() || 'Klausur';
+  const subject = document.getElementById('aiConfirmSubject').value;
+  const date = document.getElementById('aiConfirmDate').value || todayISO();
+  const topics = document.getElementById('aiConfirmTopics').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  const exam = {
+    id: Date.now(),
+    subject, title, date, progress:0,
+    topics: topics.length?topics:['Wiederholung'],
+    notes:''
+  };
+  state.exams.push(exam);
+  generateStudyPlan(exam);
+  closeGenericModal();
+  document.getElementById('aiEntryInput').value = '';
+  renderAll();
+  toast('🤖 Klausur automatisch eingetragen');
+}
+
 function generateStudyPlan(exam){
   const days = ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];
   const plan = [];
@@ -867,7 +986,10 @@ function closeGenericModal(){ document.getElementById('genericModalOverlay').cla
 function renderSubjectsView(){
   document.getElementById('subjectList').innerHTML = state.subjects.map(s=>`
     <div class="card">
-      <div class="subj-icon">${SUBJECT_ICONS[s.name]||'📘'}</div>
+      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div class="subj-icon">${s.icon || SUBJECT_ICONS[s.name] || '📘'}</div>
+        <button class="btn small ghost danger" onclick="requestDeleteSubject('${s.id}')" title="Fach löschen">🗑</button>
+      </div>
       <div class="task-title">${s.name}</div>
       <div class="stat-row"><span>Aufgaben</span><b>${s.tasks}</b></div>
       <div class="stat-row"><span>Erledigt</span><b>${s.done}</b></div>
@@ -875,6 +997,58 @@ function renderSubjectsView(){
       <div class="stat-row"><span>XP</span><b>${s.xp}</b></div>
       <div class="stat-row"><span>Klausuren</span><b>${s.exams}</b></div>
     </div>`).join('');
+}
+
+function openSubjectModal(){
+  const html = `
+    <h3>Neues Fach</h3>
+    <div class="field"><label>Name</label><input id="subjectNameInput" placeholder="z. B. Kunst, Sport, Informatik..."/></div>
+    <div class="field"><label>Icon (ein Emoji, optional)</label><input id="subjectIconInput" placeholder="📘" maxlength="4"/></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeGenericModal()">Abbrechen</button>
+      <button class="btn" onclick="saveNewSubject()">Fach hinzufügen</button>
+    </div>`;
+  showGenericModal(html);
+}
+
+function saveNewSubject(){
+  const name = document.getElementById('subjectNameInput').value.trim();
+  const icon = document.getElementById('subjectIconInput').value.trim();
+  if(!name){ toast('Bitte einen Namen eingeben'); return; }
+  const exists = state.subjects.some(s=>s.name.toLowerCase()===name.toLowerCase());
+  if(exists){ toast('Dieses Fach gibt es schon'); return; }
+  state.subjects.push({
+    id: 'subj_' + Date.now(),
+    name,
+    icon: icon || '📘',
+    tasks:0, done:0, minutes:0, xp:0, exams:0
+  });
+  closeGenericModal();
+  renderAll();
+  toast('📚 Fach hinzugefügt');
+}
+
+let subjectPendingDeleteId = null;
+function requestDeleteSubject(subjectId){
+  const s = state.subjects.find(x=>x.id===subjectId);
+  if(!s) return;
+  const inUse = state.tasks.some(t=>t.subject===s.name) || state.exams.some(e=>e.subject===s.name);
+  const html = `
+    <h3>Fach "${s.name}" wirklich löschen?</h3>
+    <p style="color:var(--text-dim); font-size:13px; margin:10px 0 0;">${inUse
+      ? 'Achtung: Es gibt noch Aufgaben oder Klausuren mit diesem Fach — die bleiben erhalten, verlieren aber die Fach-Zuordnung in der Statistik.'
+      : 'Dieses Fach hat noch keine Aufgaben oder Klausuren.'}</p>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeGenericModal()">Abbrechen</button>
+      <button class="btn" style="background:var(--coral);" onclick="confirmDeleteSubject('${subjectId}')">Ja, löschen</button>
+    </div>`;
+  showGenericModal(html);
+}
+function confirmDeleteSubject(subjectId){
+  state.subjects = state.subjects.filter(s=>s.id!==subjectId);
+  closeGenericModal();
+  renderAll();
+  toast('🗑 Fach gelöscht');
 }
 
 /* ============ ACHIEVEMENTS VIEW ============ */
