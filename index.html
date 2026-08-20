@@ -144,6 +144,11 @@ button{font-family:inherit; cursor:pointer; border:none;}
 .ai-chat-inputrow textarea:focus{outline:none; border-color:var(--violet);}
 .ai-chat-inputrow .btn{padding:10px 16px; font-size:15px; align-self:flex-end;}
 .ai-chat-inputrow .btn:disabled{opacity:.5;}
+#aiMicBtn{padding:10px 13px; position:relative;}
+#aiMicBtn.listening{background:var(--coral); color:#fff; border-color:var(--coral);}
+#aiMicBtn.listening::after{content:''; position:absolute; inset:-4px; border-radius:50%; border:2px solid var(--coral); animation:aiMicPulse 1.3s ease-out infinite;}
+@keyframes aiMicPulse{0%{transform:scale(.9); opacity:.8;} 100%{transform:scale(1.5); opacity:0;}}
+#aiVoiceToggleBtn.muted{opacity:.55;}
 .ai-fn-note{font-size:11px; color:var(--text-faint); display:flex; align-items:center; gap:5px; margin-top:2px;}
 
 /* Achievements */
@@ -504,6 +509,7 @@ body.lockin-active .nav-item, body.lockin-active .topbar, body.lockin-active .bo
           <h1 class="font-display" style="font-size:22px; margin-bottom:6px;">🤖 KI-Assistent</h1>
           <div style="color:var(--text-dim); font-size:13px; max-width:560px;">Powered by Gemini. Frag nach Zusammenfassungen, lass dir Aufgaben und Klausuren eintragen oder Lernzettel schreiben — der Assistent kann direkt in SchoolOS handeln.</div>
         </div>
+        <button class="btn ghost small" id="aiVoiceToggleBtn" onclick="toggleAiVoiceOutput()" title="Sprachantwort ein/aus">🔊 Sprachantwort</button>
         <button class="btn ghost small" onclick="resetAiChat()" title="Chat leeren">🧹 Chat leeren</button>
       </div>
       <div class="pill-row" id="aiSuggestRow">
@@ -515,13 +521,15 @@ body.lockin-active .nav-item, body.lockin-active .topbar, body.lockin-active .bo
       <div class="ai-chat-wrap">
         <div class="ai-chat-messages" id="aiChatMessages">
           <div class="ai-msg bot">
-            <div class="ai-msg-bubble">Hey! Ich bin dein KI-Assistent für SchoolOS. Ich kann Aufgaben und Klausuren für dich anlegen, erledigen oder löschen, Fächer verwalten und dir Zusammenfassungen als Lernzettel speichern. Was brauchst du?</div>
+            <div class="ai-msg-bubble">Hey! Ich bin dein KI-Assistent für SchoolOS. Ich kann Aufgaben und Klausuren für dich anlegen, erledigen oder löschen, Fächer verwalten und dir Zusammenfassungen als Lernzettel speichern. Du kannst mir auch etwas vorsprechen — tipp einfach aufs Mikrofon. Was brauchst du?</div>
           </div>
         </div>
         <div class="ai-chat-inputrow">
+          <button class="btn ghost" id="aiMicBtn" onclick="toggleAiMic()" title="Spracheingabe starten">🎤</button>
           <textarea id="aiChatInput" placeholder="Schreib deinem KI-Assistenten..." rows="1" onkeydown="handleAiChatKeydown(event)" oninput="autoGrowAiInput()"></textarea>
           <button class="btn" id="aiChatSendBtn" onclick="sendAiChatMessage()">➤</button>
         </div>
+        <div id="aiListeningHint" style="display:none; font-size:11.5px; color:var(--coral); margin-top:8px; font-weight:600;">🎙️ Ich höre zu... sprich jetzt.</div>
         <div style="font-size:11px; color:var(--text-faint); margin-top:8px;">Die KI kann sich irren — prüfe wichtige Ergebnisse (z. B. Klausurtermine) kurz nach.</div>
       </div>
     </div>
@@ -1041,8 +1049,121 @@ const GEMINI_API_KEY = "AQ.Ab8RN6JTXz9G-Pqg1Lxl764WebYUwKVHpQ_VmbDRq1WKegsHFQ";
 const GEMINI_MODEL = "gemini-3.6-flash";
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
-let aiChatHistory = []; // [{role:'user'|'model'|'function', parts:[...]}]
+let aiChatHistory = []; // [{role:'user'|'model', parts:[...]}]
 let aiSending = false;
+
+/* ---------- Sprachein-/ausgabe (Web Speech API, läuft komplett im Browser) ---------- */
+const AI_SPEECH_SUPPORTED = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+const AI_TTS_SUPPORTED = 'speechSynthesis' in window;
+let aiRecognition = null;
+let aiListening = false;
+let aiVoiceOutputEnabled = true;
+
+function getAiRecognition(){
+  if(aiRecognition) return aiRecognition;
+  if(!AI_SPEECH_SUPPORTED) return null;
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const rec = new SR();
+  rec.lang = 'de-DE';
+  rec.continuous = false;
+  rec.interimResults = true;
+  rec.maxAlternatives = 1;
+  rec.onstart = ()=>{ aiListening = true; updateAiMicUI(); };
+  rec.onend = ()=>{ aiListening = false; updateAiMicUI(); };
+  rec.onerror = (e)=>{
+    console.error('Speech recognition error', e);
+    aiListening = false; updateAiMicUI();
+    if(e.error === 'not-allowed' || e.error === 'service-not-allowed'){
+      toast('🎤 Mikrofonzugriff wurde nicht erlaubt');
+    } else if(e.error === 'no-speech'){
+      toast('🎤 Nichts gehört — versuch es nochmal');
+    }
+  };
+  rec.onresult = (e)=>{
+    let finalTranscript = '', interim = '';
+    for(let i=e.resultIndex; i<e.results.length; i++){
+      const t = e.results[i][0].transcript;
+      if(e.results[i].isFinal) finalTranscript += t; else interim += t;
+    }
+    const inputEl = document.getElementById('aiChatInput');
+    inputEl.value = finalTranscript || interim;
+    autoGrowAiInput();
+    if(finalTranscript.trim()){
+      rec.stop();
+      sendAiChatMessage();
+    }
+  };
+  aiRecognition = rec;
+  return rec;
+}
+
+function toggleAiMic(){
+  if(!AI_SPEECH_SUPPORTED){
+    toast('🎤 Spracheingabe wird von diesem Browser nicht unterstützt (z. B. Chrome verwenden)');
+    return;
+  }
+  const rec = getAiRecognition();
+  if(!rec) return;
+  if(aiListening){
+    rec.stop();
+    return;
+  }
+  if(AI_TTS_SUPPORTED) window.speechSynthesis.cancel(); // KI unterbrechen, wenn Nutzer selbst spricht
+  try{ rec.start(); } catch(err){ console.error(err); }
+}
+
+function updateAiMicUI(){
+  const btn = document.getElementById('aiMicBtn');
+  const hint = document.getElementById('aiListeningHint');
+  if(btn){
+    btn.classList.toggle('listening', aiListening);
+    btn.textContent = aiListening ? '⏹️' : '🎤';
+    btn.title = aiListening ? 'Aufnahme stoppen' : 'Spracheingabe starten';
+  }
+  if(hint) hint.style.display = aiListening ? 'block' : 'none';
+}
+
+function toggleAiVoiceOutput(){
+  aiVoiceOutputEnabled = !aiVoiceOutputEnabled;
+  const btn = document.getElementById('aiVoiceToggleBtn');
+  if(btn){
+    btn.textContent = aiVoiceOutputEnabled ? '🔊 Sprachantwort' : '🔇 Sprachantwort aus';
+    btn.classList.toggle('muted', !aiVoiceOutputEnabled);
+  }
+  if(!aiVoiceOutputEnabled && AI_TTS_SUPPORTED) window.speechSynthesis.cancel();
+}
+
+function speakAiText(text){
+  if(!aiVoiceOutputEnabled || !AI_TTS_SUPPORTED || !text) return;
+  window.speechSynthesis.cancel();
+  // Emojis raus, die würde die Sprachausgabe sonst mühsam buchstabieren
+  const clean = text.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').trim();
+  if(!clean) return;
+  const utter = new SpeechSynthesisUtterance(clean);
+  utter.lang = 'de-DE';
+  utter.rate = 1.03;
+  const voices = window.speechSynthesis.getVoices();
+  const deVoice = voices.find(v=>v.lang && v.lang.toLowerCase().startsWith('de'));
+  if(deVoice) utter.voice = deVoice;
+  window.speechSynthesis.speak(utter);
+}
+if(AI_TTS_SUPPORTED){
+  window.speechSynthesis.onvoiceschanged = ()=>{ /* Stimmenliste nachladen lassen, kein Handlungsbedarf hier */ };
+}
+(function initAiVoiceUI(){
+  const micBtn = document.getElementById('aiMicBtn');
+  if(micBtn && !AI_SPEECH_SUPPORTED){
+    micBtn.disabled = true;
+    micBtn.style.opacity = '.4';
+    micBtn.title = 'Spracheingabe wird von diesem Browser nicht unterstützt (z. B. Chrome verwenden)';
+  }
+  const voiceBtn = document.getElementById('aiVoiceToggleBtn');
+  if(voiceBtn && !AI_TTS_SUPPORTED){
+    voiceBtn.disabled = true;
+    voiceBtn.textContent = '🔇 Sprachausgabe n. v.';
+    voiceBtn.title = 'Sprachausgabe wird von diesem Browser nicht unterstützt';
+  }
+})();
 
 /* Werkzeuge, die die KI selbstständig aufrufen kann, um SchoolOS zu steuern */
 const AI_TOOLS = [{
@@ -1327,6 +1448,7 @@ async function sendAiChatMessage(){
     const finalText = await runAiTurn();
     removeAiTyping();
     appendAiMessage('bot', finalText || '(Keine Antwort erhalten)');
+    speakAiText(finalText);
   } catch(err){
     console.error(err);
     removeAiTyping();
