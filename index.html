@@ -54,11 +54,13 @@ button{font-family:inherit; cursor:pointer; border:none;}
 .nav-item{
   display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:11px;
   color:var(--text-dim); font-size:14px; font-weight:600; background:none; text-align:left; width:100%;
-  transition:background .15s, color .15s;
+  transition:background .18s, color .18s, transform .12s;
 }
 .nav-item:hover{background:var(--surface); color:var(--text);}
-.nav-item.active{background:var(--surface-hi); color:var(--text); box-shadow:inset 0 0 0 1px var(--border);}
-.nav-item .ic{width:18px; text-align:center; font-size:15px;}
+.nav-item:active{transform:scale(.98);}
+.nav-item.active{background:var(--surface-hi); color:var(--text); box-shadow:inset 0 0 0 1px var(--border), inset 2px 0 0 var(--violet);}
+.nav-item .ic{width:18px; text-align:center; font-size:15px; transition:transform .18s;}
+.nav-item.active .ic{transform:scale(1.1);}
 .sidebar-foot{margin-top:auto; padding:12px 10px; border-top:1px solid var(--border); font-size:12px; color:var(--text-faint);}
 
 /* ---------- MAIN ---------- */
@@ -92,18 +94,21 @@ button{font-family:inherit; cursor:pointer; border:none;}
 .grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(230px,1fr)); gap:14px;}
 .card{
   background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm);
-  padding:16px; transition:transform .15s, border-color .15s;
+  padding:16px; transition:transform .18s cubic-bezier(.22,.9,.35,1), border-color .18s, box-shadow .18s;
+  box-shadow:0 1px 2px rgba(0,0,0,.2);
 }
-.card:hover{border-color:#37406a; transform:translateY(-2px);}
+.card:hover{border-color:#37406a; transform:translateY(-3px); box-shadow:0 10px 24px rgba(0,0,0,.28);}
 .task-card.done{opacity:.45;}
 .task-card .tag{font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.5px; font-weight:700;}
 .task-title{font-weight:700; font-size:14.5px; margin:6px 0 3px 0;}
 .task-desc{font-size:12.5px; color:var(--text-dim); margin-bottom:12px;}
 .task-foot{display:flex; justify-content:space-between; align-items:center;}
 .xp-chip{font-size:12px; font-weight:700; color:var(--gold); font-family:'JetBrains Mono';}
-.btn{padding:7px 14px; border-radius:9px; font-size:12.5px; font-weight:700; background:var(--grad); color:#0a0c14;}
-.btn:hover{filter:brightness(1.08);}
-.btn.ghost{background:var(--surface-hi); color:var(--text); border:1px solid var(--border);}
+.btn{padding:7px 14px; border-radius:9px; font-size:12.5px; font-weight:700; background:var(--grad); color:#0a0c14; transition:filter .15s, transform .12s, box-shadow .15s; box-shadow:0 2px 10px rgba(139,107,255,.25);}
+.btn:hover{filter:brightness(1.08); box-shadow:0 4px 16px rgba(139,107,255,.4);}
+.btn:active{transform:scale(.96); box-shadow:0 1px 6px rgba(139,107,255,.3);}
+.btn.ghost{background:var(--surface-hi); color:var(--text); border:1px solid var(--border); box-shadow:none;}
+.btn.ghost:hover{box-shadow:0 4px 14px rgba(0,0,0,.25);}
 .btn.small{padding:5px 10px; font-size:11.5px;}
 .btn:disabled{opacity:.5; cursor:default;}
 
@@ -246,12 +251,55 @@ button{font-family:inherit; cursor:pointer; border:none;}
   .sidebar{display:none;}
   .main{padding:18px 16px 90px 16px;}
   .bottom-nav{
-    display:flex; position:fixed; bottom:0; left:0; right:0; background:var(--bg-elevated);
-    border-top:1px solid var(--border); z-index:40; padding:8px 4px;
+    display:flex; position:fixed; bottom:0; left:0; right:0; background:rgba(16,19,30,.88);
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    border-top:1px solid var(--border); z-index:40; padding:8px 4px calc(8px + env(safe-area-inset-bottom));
   }
-  .bottom-nav .nav-item{flex-direction:column; font-size:9.5px; gap:3px; padding:6px 2px; text-align:center;}
-  .bottom-nav .nav-item .ic{font-size:17px;}
+  .bottom-nav .nav-item{flex-direction:column; font-size:9.5px; gap:3px; padding:6px 2px; text-align:center; position:relative; transition:color .2s, transform .15s;}
+  .bottom-nav .nav-item .ic{font-size:17px; transition:transform .2s cubic-bezier(.34,1.56,.64,1);}
+  .bottom-nav .nav-item.active .ic{transform:translateY(-2px) scale(1.12);}
+  .bottom-nav .nav-item.active{color:var(--text);}
+  .bottom-nav .nav-item.active::before{
+    content:''; position:absolute; top:-8px; left:50%; transform:translateX(-50%);
+    width:4px; height:4px; border-radius:50%; background:var(--violet); box-shadow:0 0 8px var(--violet);
+  }
+  .bottom-nav .nav-item:active{transform:scale(.92);}
 }
+
+/* ---------- MORE SHEET (mobile) ---------- */
+.more-sheet-overlay{
+  display:none; position:fixed; inset:0; z-index:80; background:rgba(6,7,14,.55);
+  backdrop-filter:blur(2px);
+}
+.more-sheet-overlay.show{display:block; animation:fadeIn .18s ease-out;}
+.more-sheet{
+  position:fixed; left:0; right:0; bottom:0; z-index:81;
+  background:var(--bg-elevated); border-top:1px solid var(--border);
+  border-radius:20px 20px 0 0; padding:10px 16px calc(18px + env(safe-area-inset-bottom));
+  transform:translateY(100%); transition:transform .28s cubic-bezier(.32,.72,0,1);
+  box-shadow:0 -12px 40px rgba(0,0,0,.45);
+}
+.more-sheet.show{transform:translateY(0);}
+.more-sheet-handle{width:38px; height:4px; border-radius:100px; background:var(--border); margin:2px auto 14px;}
+.more-sheet-grid{display:grid; grid-template-columns:repeat(4, 1fr); gap:10px;}
+.more-sheet-item{
+  display:flex; flex-direction:column; align-items:center; gap:8px; padding:14px 4px;
+  border-radius:14px; background:var(--surface); border:1px solid var(--border);
+  font-size:11.5px; font-weight:600; color:var(--text-dim); transition:transform .15s, border-color .15s, color .15s;
+}
+.more-sheet-item .ic{font-size:22px;}
+.more-sheet-item:active{transform:scale(.94);}
+.more-sheet-item.active{color:var(--text); border-color:var(--violet); box-shadow:0 0 0 1px var(--violet) inset;}
+
+@keyframes fadeIn{from{opacity:0;} to{opacity:1;}}
+@keyframes viewEnter{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);}}
+.view.active{animation:viewEnter .32s cubic-bezier(.22,.9,.35,1);}
+.card{animation:viewEnter .35s cubic-bezier(.22,.9,.35,1) backwards;}
+.card:nth-child(1){animation-delay:.02s;}
+.card:nth-child(2){animation-delay:.06s;}
+.card:nth-child(3){animation-delay:.1s;}
+.card:nth-child(4){animation-delay:.14s;}
+.card:nth-child(n+5){animation-delay:.16s;}
 
 
 /* ---------- LOCK-IN OVERLAY ---------- */
@@ -573,7 +621,18 @@ body.lockin-active .nav-item, body.lockin-active .topbar, body.lockin-active .bo
   <button class="nav-item" data-view="tasks"><span class="ic">✅</span>Aufgaben</button>
   <button class="nav-item" data-view="exams"><span class="ic">🚨</span>Klausuren</button>
   <button class="nav-item" data-view="focus"><span class="ic">🧠</span>Lernen</button>
-  <button class="nav-item" data-view="profile"><span class="ic">👤</span>Profil</button>
+  <button class="nav-item" id="moreNavBtn" onclick="openMoreSheet()"><span class="ic">☰</span>Mehr</button>
+</div>
+
+<div class="more-sheet-overlay" id="moreSheetOverlay" onclick="closeMoreSheet()"></div>
+<div class="more-sheet" id="moreSheet">
+  <div class="more-sheet-handle"></div>
+  <div class="more-sheet-grid">
+    <button class="more-sheet-item" data-view="subjects" onclick="goToView('subjects')"><span class="ic">📚</span>Fächer</button>
+    <button class="more-sheet-item" data-view="achievements" onclick="goToView('achievements')"><span class="ic">🏆</span>Achievements</button>
+    <button class="more-sheet-item" data-view="ai-entry" onclick="goToView('ai-entry')"><span class="ic">🤖</span>KI-Eintrag</button>
+    <button class="more-sheet-item" data-view="profile" onclick="goToView('profile')"><span class="ic">👤</span>Profil</button>
+  </div>
 </div>
 
 <div id="toastWrap"></div>
@@ -680,13 +739,33 @@ function addDaysISO(n){ const d=new Date(); d.setDate(d.getDate()+n); return d.t
 function daysUntil(iso){ const d=new Date(iso); const now=new Date(); now.setHours(0,0,0,0); d.setHours(0,0,0,0); return Math.round((d-now)/86400000); }
 
 /* ============ NAV ============ */
-document.querySelectorAll('.nav-item').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    const v = btn.dataset.view;
-    document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active', b.dataset.view===v));
-    document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
-    document.getElementById('view-'+v).classList.add('active');
-      });
+const MORE_SHEET_VIEWS = ['subjects','achievements','ai-entry','profile'];
+
+function showView(v){
+  document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.classList.toggle('active', b.dataset.view===v));
+  document.querySelectorAll('.more-sheet-item').forEach(b=>b.classList.toggle('active', b.dataset.view===v));
+  const moreBtn = document.getElementById('moreNavBtn');
+  if(moreBtn) moreBtn.classList.toggle('active', MORE_SHEET_VIEWS.includes(v));
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+}
+
+function goToView(v){
+  showView(v);
+  closeMoreSheet();
+}
+
+function openMoreSheet(){
+  document.getElementById('moreSheetOverlay').classList.add('show');
+  document.getElementById('moreSheet').classList.add('show');
+}
+function closeMoreSheet(){
+  document.getElementById('moreSheetOverlay').classList.remove('show');
+  document.getElementById('moreSheet').classList.remove('show');
+}
+
+document.querySelectorAll('.nav-item[data-view]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{ showView(btn.dataset.view); });
 });
 
 /* ============ TOASTS ============ */
