@@ -128,6 +128,11 @@ button{font-family:inherit; cursor:pointer; border:none;}
 .btn.small.danger{color:var(--text-dim);}
 .btn.small.danger:hover{color:#fff; border-color:var(--coral); background:var(--coral);}
 .lernzettel-textarea{width:100%; min-height:220px; background:var(--bg-elevated); border:1px solid var(--border); border-radius:12px; padding:14px; color:var(--text); font-size:13.5px; font-family:inherit; line-height:1.6; resize:vertical;}
+.summary-subject-group{margin-bottom:28px;}
+.summary-subject-head{display:flex; align-items:center; gap:8px; font-family:'Space Grotesk'; font-weight:700; font-size:15px; margin-bottom:12px;}
+.summary-card{cursor:pointer;}
+.summary-card .summary-preview{font-size:12.5px; color:var(--text-dim); margin:6px 0 10px; line-height:1.5; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;}
+.summary-card .summary-meta{font-size:11px; color:var(--text-faint);}
 
 /* AI Chat */
 .ai-chat-wrap{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px; display:flex; flex-direction:column; max-width:640px;}
@@ -392,6 +397,7 @@ body.lockin-active .nav-item, body.lockin-active .topbar, body.lockin-active .bo
     <button class="nav-item" data-view="exams"><span class="ic">🚨</span>Klausuren</button>
     <button class="nav-item" data-view="focus"><span class="ic">🧠</span>Lernen</button>
     <button class="nav-item" data-view="subjects"><span class="ic">📚</span>Fächer</button>
+    <button class="nav-item" data-view="summaries"><span class="ic">📄</span>Zusammenfassungen</button>
     <button class="nav-item" data-view="achievements"><span class="ic">🏆</span>Achievements</button>
     <button class="nav-item" data-view="ai-entry"><span class="ic">🤖</span>KI-Eintrag</button>
     <button class="nav-item" data-view="profile"><span class="ic">👤</span>Profil</button>
@@ -556,6 +562,18 @@ body.lockin-active .nav-item, body.lockin-active .topbar, body.lockin-active .bo
       <div class="grid" id="subjectList"></div>
     </div>
 
+    <!-- ZUSAMMENFASSUNGEN -->
+    <div class="view" id="view-summaries">
+      <div class="hero-row">
+        <div>
+          <h1 class="font-display" style="font-size:22px;">Zusammenfassungen</h1>
+          <div style="color:var(--text-dim); font-size:13px; margin-top:4px;">Lernzettel & Zusammenfassungen pro Fach — unabhängig von Klausuren. Selbst schreiben oder von der KI erstellen lassen.</div>
+        </div>
+        <button class="btn" onclick="openSummaryModal()">+ Neue Zusammenfassung</button>
+      </div>
+      <div id="summarySubjectGroups"></div>
+    </div>
+
     <!-- ACHIEVEMENTS -->
     <div class="view" id="view-achievements">
       <h1 class="font-display" style="font-size:22px; margin-bottom:16px;">Achievements</h1>
@@ -574,7 +592,8 @@ body.lockin-active .nav-item, body.lockin-active .topbar, body.lockin-active .bo
       </div>
       <div class="pill-row" id="aiSuggestRow">
         <button class="pill" onclick="aiSuggest('Ich schreibe am 12.3.26 eine Biologie Klausur über Zellbiologie und Mitose. Trag das ein und erstell einen Lernplan.')">✨ Klausur eintragen</button>
-        <button class="pill" onclick="aiSuggest('Schreib mir eine kurze Zusammenfassung zum Thema Mitose und speichere sie als Lernzettel in meiner nächsten Bio-Klausur.')">📄 Zusammenfassung schreiben</button>
+        <button class="pill" onclick="aiSuggest('Schreib mir eine kurze Zusammenfassung zum Thema Mitose und speichere sie als Lernzettel in meiner nächsten Bio-Klausur.')">📄 Zusammenfassung für Klausur</button>
+        <button class="pill" onclick="aiSuggest('Schreib mir eine Zusammenfassung zum Thema Photosynthese und speichere sie bei Biologie in meinen Zusammenfassungen.')">📚 Zusammenfassung fürs Fach speichern</button>
         <button class="pill" onclick="aiSuggest('Leg mir eine neue Aufgabe an: Mathe Hausaufgaben, fällig übermorgen.')">✅ Aufgabe anlegen</button>
         <button class="pill" onclick="aiSuggest('Was steht diese Woche bei mir an?')">🗓️ Wochenüberblick</button>
         <button class="pill" onclick="aiSuggest('Erstell mir ein Bild als Merkzettel-Skizze zum Thema Zellbiologie.')">🎨 Bild erstellen</button>
@@ -629,6 +648,7 @@ body.lockin-active .nav-item, body.lockin-active .topbar, body.lockin-active .bo
   <div class="more-sheet-handle"></div>
   <div class="more-sheet-grid">
     <button class="more-sheet-item" data-view="subjects" onclick="goToView('subjects')"><span class="ic">📚</span>Fächer</button>
+    <button class="more-sheet-item" data-view="summaries" onclick="goToView('summaries')"><span class="ic">📄</span>Zusammenfassungen</button>
     <button class="more-sheet-item" data-view="achievements" onclick="goToView('achievements')"><span class="ic">🏆</span>Achievements</button>
     <button class="more-sheet-item" data-view="ai-entry" onclick="goToView('ai-entry')"><span class="ic">🤖</span>KI-Eintrag</button>
     <button class="more-sheet-item" data-view="profile" onclick="goToView('profile')"><span class="ic">👤</span>Profil</button>
@@ -725,6 +745,7 @@ function freshState(name){
     subjects: DEFAULT_SUBJECTS.map(s=>({...s})),
     tasks: [],
     exams: [],
+    summaries: [],
     achievements: ACHIEVEMENTS_DEF.map(a=>({...a, unlocked:false})),
     studyPlans: {},
     focus: { running:false, paused:false, secondsLeft:0, totalSeconds:0, subject:"", topic:"", interval:null, lockIn:false },
@@ -739,7 +760,7 @@ function addDaysISO(n){ const d=new Date(); d.setDate(d.getDate()+n); return d.t
 function daysUntil(iso){ const d=new Date(iso); const now=new Date(); now.setHours(0,0,0,0); d.setHours(0,0,0,0); return Math.round((d-now)/86400000); }
 
 /* ============ NAV ============ */
-const MORE_SHEET_VIEWS = ['subjects','achievements','ai-entry','profile'];
+const MORE_SHEET_VIEWS = ['subjects','summaries','achievements','ai-entry','profile'];
 
 function showView(v){
   document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.classList.toggle('active', b.dataset.view===v));
@@ -1409,6 +1430,25 @@ const AI_TOOLS = [{
       }
     },
     {
+      name: "write_summary",
+      description: "Erstellt oder überschreibt eine Zusammenfassung/Lernzettel zu einem Fach (unabhängig von Klausuren). Nutze dies für allgemeine inhaltliche Zusammenfassungen, die der Nutzer dauerhaft in seinen Fach-Zusammenfassungen speichern möchte. Wenn summary_id angegeben ist, wird die bestehende Zusammenfassung überschrieben, sonst eine neue erstellt.",
+      parameters: {
+        type: "OBJECT",
+        properties: {
+          subject: { type: "STRING", description: "Name eines existierenden Fachs" },
+          title: { type: "STRING", description: "Titel/Thema der Zusammenfassung" },
+          content: { type: "STRING", description: "Vollständiger Zusammenfassungstext als Klartext." },
+          summary_id: { type: "NUMBER", description: "ID einer bestehenden Zusammenfassung, falls diese überschrieben werden soll." }
+        },
+        required: ["subject", "title", "content"]
+      }
+    },
+    {
+      name: "delete_summary",
+      description: "Löscht eine bestehende Zusammenfassung per ID.",
+      parameters: { type: "OBJECT", properties: { summary_id: { type: "NUMBER" } }, required: ["summary_id"] }
+    },
+    {
       name: "create_subject",
       description: "Legt ein neues Schulfach an.",
       parameters: {
@@ -1495,6 +1535,38 @@ function aiToolExecute(name, args){
         toast('🤖 Lernzettel gespeichert: '+exam.title);
         return { success:true };
       }
+      case "write_summary": {
+        const subj = state.subjects.find(s=>s.name.toLowerCase()===String(args.subject||'').toLowerCase());
+        const subjectName = subj ? subj.name : (args.subject || state.subjects[0]?.name || 'Allgemein');
+        if(args.summary_id){
+          const sm = state.summaries.find(x=>x.id===args.summary_id);
+          if(!sm) return { success:false, error:'Zusammenfassung nicht gefunden' };
+          sm.title = args.title || sm.title;
+          sm.subject = subjectName;
+          sm.content = args.content || '';
+          renderAll();
+          toast('🤖 Zusammenfassung aktualisiert: '+sm.title);
+          return { success:true, summary:sm };
+        }
+        const summary = {
+          id: Date.now() + Math.floor(Math.random()*1000),
+          subject: subjectName,
+          title: args.title || 'Zusammenfassung',
+          content: args.content || '',
+          createdAt: todayISO()
+        };
+        state.summaries.push(summary);
+        renderAll();
+        toast('🤖 Zusammenfassung gespeichert: '+summary.title);
+        return { success:true, summary };
+      }
+      case "delete_summary": {
+        if(!state.summaries.some(x=>x.id===args.summary_id)) return { success:false, error:'Zusammenfassung nicht gefunden' };
+        state.summaries = state.summaries.filter(x=>x.id!==args.summary_id);
+        renderAll();
+        toast('🤖 Zusammenfassung gelöscht');
+        return { success:true };
+      }
       case "create_subject": {
         const nm = (args.name||'').trim();
         if(!nm) return { success:false, error:'Kein Name angegeben' };
@@ -1526,6 +1598,7 @@ function buildAiSystemInstruction(){
   const subjects = state.subjects.map(s=>`- ${s.name} (id: ${s.id})`).join('\n') || 'Keine Fächer angelegt.';
   const tasks = state.tasks.map(t=>`- id:${t.id} | "${t.title}" | Fach:${t.subject} | Deadline:${t.deadline} | ${t.done?'erledigt':'offen'} | +${t.xp} XP`).join('\n') || 'Keine Aufgaben vorhanden.';
   const exams = state.exams.map(e=>`- id:${e.id} | "${e.title}" | Fach:${e.subject} | Datum:${e.date} | Themen: ${(e.topics||[]).join(', ')||'-'} | Lernzettel vorhanden: ${e.notes && e.notes.trim() ? 'ja' : 'nein'}`).join('\n') || 'Keine Klausuren vorhanden.';
+  const summaries = state.summaries.map(sm=>`- id:${sm.id} | "${sm.title}" | Fach:${sm.subject}`).join('\n') || 'Keine Zusammenfassungen vorhanden.';
 
   return `Du bist der KI-Assistent von SchoolOS, einer Lern- und Organisations-App für Schüler:innen. Der Nutzer heißt ${state.user.name} (Level ${state.user.level}).
 Heutiges Datum: ${todayISO()} (Format JJJJ-MM-TT).
@@ -1539,11 +1612,14 @@ ${tasks}
 Aktuelle Klausuren:
 ${exams}
 
-Du hast über die dir bereitgestellten Funktionen (Tools) direkte Kontrolle über die App: Du kannst Aufgaben und Klausuren anlegen, erledigen und löschen, Fächer anlegen und löschen, sowie Lernzettel (Zusammenfassungen/Notizen) zu Klausuren schreiben und speichern.
+Vorhandene Zusammenfassungen (unabhängig von Klausuren, pro Fach):
+${summaries}
+
+Du hast über die dir bereitgestellten Funktionen (Tools) direkte Kontrolle über die App: Du kannst Aufgaben und Klausuren anlegen, erledigen und löschen, Fächer anlegen und löschen, Lernzettel (Notizen) zu Klausuren schreiben und speichern, sowie eigenständige Zusammenfassungen zu einem Fach anlegen, aktualisieren und löschen (unabhängig von Klausuren).
 Regeln:
 - Nutze die Funktionen aktiv und direkt, wenn der Nutzer eine Aktion verlangt oder sinnvoll erscheint — beschreibe nicht nur, was man tun könnte, sondern tu es.
-- Wenn du eine inhaltliche Zusammenfassung zu einem Lernthema schreibst und eine passende Klausur existiert (oder gerade erstellt wurde), biete an, sie per write_lernzettel zu speichern, bzw. speichere sie direkt, wenn der Nutzer das erkennbar möchte.
-- Referenziere Aufgaben/Klausuren/Fächer immer über ihre echten IDs aus der Liste oben, nie erfundene IDs.
+- Wenn du eine inhaltliche Zusammenfassung zu einem Lernthema schreibst: Wenn es klar um eine bevorstehende Klausur geht, speichere sie per write_lernzettel in der Klausur. Ansonsten (z. B. allgemeine Themen-Zusammenfassung ohne Klausurbezug) speichere sie per write_summary im passenden Fach. Frage im Zweifel kurz nach, wo die Zusammenfassung gespeichert werden soll.
+- Referenziere Aufgaben/Klausuren/Fächer/Zusammenfassungen immer über ihre echten IDs aus der Liste oben, nie erfundene IDs.
 - Frage kurz nach, falls eine notwendige Angabe (z. B. welches Fach) unklar oder mehrdeutig ist, statt zu raten.
 - Antworte immer auf Deutsch, in einem freundlichen, knappen, motivierenden Ton, passend zu einer Schul-App.
 - Nach einem Funktionsaufruf gib dem Nutzer immer noch eine kurze, natürlichsprachliche Bestätigung.`;
@@ -1820,6 +1896,108 @@ function confirmDeleteSubject(subjectId){
   toast('🗑 Fach gelöscht');
 }
 
+/* ============ ZUSAMMENFASSUNGEN VIEW ============ */
+function summaryPreviewText(content){
+  return (content||'').trim().slice(0,160);
+}
+function renderSummariesView(){
+  const wrap = document.getElementById('summarySubjectGroups');
+  if(!wrap) return;
+  if(!state.summaries.length){
+    wrap.innerHTML = `<div style="color:var(--text-faint); font-size:13px; margin-top:20px;">Noch keine Zusammenfassungen. Leg über "+ Neue Zusammenfassung" los oder lass die KI dir eine schreiben.</div>`;
+    return;
+  }
+  const bySubject = {};
+  state.summaries.forEach(sm=>{
+    (bySubject[sm.subject] = bySubject[sm.subject] || []).push(sm);
+  });
+  wrap.innerHTML = Object.keys(bySubject).map(subjName=>`
+    <div class="summary-subject-group">
+      <div class="summary-subject-head"><span>${subjectIcon(subjName)}</span><span>${subjName}</span></div>
+      <div class="grid">
+        ${bySubject[subjName].map(sm=>`
+          <div class="card summary-card" onclick="openSummaryDetail(${sm.id})">
+            <div class="task-title">${sm.title}</div>
+            <div class="summary-preview">${summaryPreviewText(sm.content) || 'Kein Inhalt'}</div>
+            <div class="summary-meta">${sm.createdAt || ''}</div>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function openSummaryModal(){
+  const html = `
+    <h3>Neue Zusammenfassung</h3>
+    <div class="field"><label>Fach</label>
+      <select id="summarySubjectInput">${state.subjects.map(s=>`<option>${s.name}</option>`).join('')}</select>
+    </div>
+    <div class="field"><label>Titel</label><input id="summaryTitleInput" placeholder="z. B. Mitose, Zellbiologie, Kapitel 3..."/></div>
+    <div class="field"><label>Inhalt</label>
+      <textarea class="lernzettel-textarea" id="summaryContentInput" placeholder="Schreib deine Zusammenfassung, oder lass sie dir von der KI erstellen und hier einfügen..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeGenericModal()">Abbrechen</button>
+      <button class="btn" onclick="saveNewSummary()">Speichern</button>
+    </div>`;
+  showGenericModal(html);
+}
+function saveNewSummary(){
+  const subject = document.getElementById('summarySubjectInput').value;
+  const title = document.getElementById('summaryTitleInput').value.trim();
+  const content = document.getElementById('summaryContentInput').value;
+  if(!title){ toast('Bitte einen Titel eingeben'); return; }
+  state.summaries.push({
+    id: Date.now() + Math.floor(Math.random()*1000),
+    subject,
+    title,
+    content,
+    createdAt: todayISO()
+  });
+  closeGenericModal();
+  renderAll();
+  toast('📄 Zusammenfassung gespeichert');
+}
+
+function openSummaryDetail(summaryId){
+  const sm = state.summaries.find(s=>s.id===summaryId);
+  if(!sm) return;
+  const html = `
+    <h3>${sm.title}</h3>
+    <div style="color:var(--text-dim); font-size:12.5px; margin:6px 0 14px;">Fach: ${sm.subject}${sm.createdAt ? ' · '+sm.createdAt : ''}</div>
+    <textarea class="lernzettel-textarea" id="summaryEditTextarea">${sm.content||''}</textarea>
+    <div class="modal-actions">
+      <button class="btn small ghost danger" onclick="requestDeleteSummary(${sm.id})">🗑 Löschen</button>
+      <button class="btn ghost" onclick="closeGenericModal()">Schließen</button>
+      <button class="btn" onclick="saveSummaryEdit(${sm.id})">Speichern</button>
+    </div>`;
+  showGenericModal(html);
+}
+function saveSummaryEdit(summaryId){
+  const sm = state.summaries.find(s=>s.id===summaryId);
+  if(!sm) return;
+  sm.content = document.getElementById('summaryEditTextarea').value;
+  closeGenericModal();
+  renderAll();
+  toast('📄 Zusammenfassung gespeichert');
+}
+function requestDeleteSummary(summaryId){
+  const sm = state.summaries.find(s=>s.id===summaryId);
+  if(!sm) return;
+  const html = `
+    <h3>Zusammenfassung "${sm.title}" wirklich löschen?</h3>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="openSummaryDetail(${sm.id})">Abbrechen</button>
+      <button class="btn" style="background:var(--coral);" onclick="confirmDeleteSummary(${sm.id})">Ja, löschen</button>
+    </div>`;
+  showGenericModal(html);
+}
+function confirmDeleteSummary(summaryId){
+  state.summaries = state.summaries.filter(s=>s.id!==summaryId);
+  closeGenericModal();
+  renderAll();
+  toast('🗑 Zusammenfassung gelöscht');
+}
+
 /* ============ ACHIEVEMENTS VIEW ============ */
 function renderAchievementsView(){
   document.getElementById('achList').innerHTML = state.achievements.map(achCardHtml).join('');
@@ -1943,6 +2121,7 @@ function renderAll(){
   renderTasksView();
   renderExamsView();
   renderSubjectsView();
+  renderSummariesView();
   renderAchievementsView();
   renderProfile();
   scheduleSave();
@@ -2070,6 +2249,7 @@ function serializeState(s){
     subjects: s.subjects,
     tasks: s.tasks,
     exams: s.exams,
+    summaries: s.summaries,
     achievementsUnlocked: Object.fromEntries(s.achievements.map(a=>[a.id, a.unlocked])),
     studyPlans: s.studyPlans,
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -2082,6 +2262,7 @@ function applyLoadedState(data){
   if(data.subjects) state.subjects = data.subjects;
   if(data.tasks) state.tasks = data.tasks;
   if(data.exams) state.exams = data.exams;
+  if(data.summaries) state.summaries = data.summaries;
   if(data.studyPlans) state.studyPlans = data.studyPlans;
   if(data.achievementsUnlocked){
     state.achievements.forEach(a=>{ a.unlocked = !!data.achievementsUnlocked[a.id]; });
