@@ -259,6 +259,21 @@ input[type="range"].weight-slider::-moz-range-thumb{
 .grade-result .gr-value.bad{color:var(--coral);}
 .grade-result .gr-sub{font-size:11.5px; color:var(--text-faint); margin-top:2px;}
 .grade-empty-state{color:var(--text-faint); font-size:13px; padding:30px 6px; text-align:center; line-height:1.7;}
+.grade-overview-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:12px; margin-bottom:26px;}
+.grade-subject-card{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:14px;
+  cursor:pointer; transition:transform .18s cubic-bezier(.22,.9,.35,1), border-color .18s, box-shadow .18s;
+}
+.grade-subject-card:hover{border-color:#37406a; transform:translateY(-2px); box-shadow:0 10px 24px rgba(0,0,0,.28);}
+.grade-subject-card.active{border-color:var(--violet); box-shadow:inset 0 0 0 1px var(--violet);}
+.gcs-head{display:flex; align-items:center; gap:8px; margin-bottom:10px;}
+.gcs-icon{font-size:17px;}
+.gcs-name{font-size:12.5px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.gcs-value{font-family:'JetBrains Mono'; font-size:22px; font-weight:700;}
+.gcs-value.good{color:var(--mint);}
+.gcs-value.mid{color:var(--amber);}
+.gcs-value.bad{color:var(--coral);}
+.gcs-empty{font-size:11.5px; color:var(--text-faint);}
 
 /* Focus mode */
 .focus-wrap{display:flex; flex-direction:column; align-items:center; padding:50px 20px; text-align:center;}
@@ -622,11 +637,15 @@ body.lockin-active .nav-item, body.lockin-active .topbar, body.lockin-active .bo
       <div class="hero-row">
         <div>
           <h1 class="font-display" style="font-size:22px;">Notenschnitt</h1>
-          <div style="color:var(--text-dim); font-size:13px; margin-top:4px;">Berechne deinen Schnitt pro Fach — mit eigener Gewichtung für mündlich, schriftlich & praktisch.</div>
+          <div style="color:var(--text-dim); font-size:13px; margin-top:4px;">Alle Fächer im Überblick, plus dein Schnitt pro Fach — mit eigener Gewichtung für mündlich, schriftlich & praktisch.</div>
         </div>
-        <div class="field" style="width:230px; margin:0;">
-          <select id="gradesSubjectSelect" onchange="setGradeSubject(this.value)"></select>
-        </div>
+      </div>
+      <div id="gradesOverallResult" style="margin-bottom:20px;"></div>
+      <div class="section-title">Alle Fächer</div>
+      <div class="grade-overview-grid" id="gradesOverviewGrid"></div>
+      <div class="section-title" style="margin-top:8px;">Noten eintragen</div>
+      <div class="field" style="width:240px;">
+        <select id="gradesSubjectSelect" onchange="setGradeSubject(this.value)"></select>
       </div>
       <div id="gradeCalcBody"></div>
     </div>
@@ -1993,6 +2012,13 @@ function ensureGradesData(subject){
 
 let selectedGradeSubjectId = null;
 
+// Rechnet einen Notenpunkte-Wert (0-15) näherungsweise auf die Notenskala (1-6) um,
+// damit Fächer mit unterschiedlichen Skalen in einem Gesamtschnitt kombiniert werden können.
+function toNoteScale(value, mode){
+  if(mode === 'note') return value;
+  return 6 - (value/15)*5;
+}
+
 function renderGradesView(){
   const sel = document.getElementById('gradesSubjectSelect');
   if(!sel) return;
@@ -2001,6 +2027,56 @@ function renderGradesView(){
   }
   sel.innerHTML = state.subjects.map(s=>`<option value="${s.id}" ${s.id===selectedGradeSubjectId?'selected':''}>${s.icon||SUBJECT_ICONS[s.name]||'📘'} ${s.name}</option>`).join('');
   renderGradeCalculator();
+}
+
+function renderGradesOverview(){
+  const grid = document.getElementById('gradesOverviewGrid');
+  const totalWrap = document.getElementById('gradesOverallResult');
+  if(!grid || !totalWrap) return;
+
+  const rows = state.subjects.map(s=>{
+    const g = ensureGradesData(s);
+    return { subject:s, g, r: computeGradeResult(g) };
+  });
+
+  const withResult = rows.filter(x=>x.r);
+  if(!withResult.length){
+    totalWrap.innerHTML = `<div class="grade-empty-state">Trag unten bei mindestens einem Fach Noten ein, um deinen Gesamtschnitt über alle Fächer zu sehen.</div>`;
+  } else {
+    const noteEquivalents = withResult.map(x=>toNoteScale(x.r.overall, x.g.mode));
+    const avgNote = noteEquivalents.reduce((a,b)=>a+b,0)/noteEquivalents.length;
+    const cls = avgNote<=2.3 ? 'good' : (avgNote<=3.7 ? 'mid' : 'bad');
+    totalWrap.innerHTML = `
+      <div class="grade-result">
+        <div>
+          <div class="gr-label">Gesamtschnitt · alle Fächer</div>
+          <div class="gr-value ${cls}">${avgNote.toFixed(2)}</div>
+          <div class="gr-sub">Ø aus ${withResult.length} Fach${withResult.length===1?'':'ächern'} · Notenpunkte werden dafür auf die Notenskala (1–6) umgerechnet</div>
+        </div>
+      </div>`;
+  }
+
+  grid.innerHTML = rows.map(({subject, g, r})=>{
+    const isNote = g.mode === 'note';
+    const active = subject.id === selectedGradeSubjectId;
+    let valueHtml;
+    if(!r){
+      valueHtml = `<div class="gcs-empty">Noch keine Noten</div>`;
+    } else {
+      const cls = isNote
+        ? (r.overall<=2.3 ? 'good' : (r.overall<=3.7 ? 'mid' : 'bad'))
+        : (r.overall>=10 ? 'good' : (r.overall>=5 ? 'mid' : 'bad'));
+      valueHtml = `<div class="gcs-value ${cls}">${r.overall.toFixed(2)}${isNote?'':' Pkt.'}</div>`;
+    }
+    return `
+      <div class="grade-subject-card ${active?'active':''}" onclick="setGradeSubject('${subject.id}')">
+        <div class="gcs-head">
+          <span class="gcs-icon">${subject.icon||SUBJECT_ICONS[subject.name]||'📘'}</span>
+          <span class="gcs-name">${subject.name}</span>
+        </div>
+        ${valueHtml}
+      </div>`;
+  }).join('');
 }
 
 function setGradeSubject(id){
@@ -2148,6 +2224,8 @@ function renderGradeCalculator(){
       <div class="grade-cat-grid">${catsHtml}</div>
       ${resultHtml}
     </div>`;
+
+  renderGradesOverview();
 }
 
 /* ============ ZUSAMMENFASSUNGEN VIEW ============ */
