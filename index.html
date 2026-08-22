@@ -206,6 +206,60 @@ button{font-family:inherit; cursor:pointer; border:none;}
 .stat-row{display:flex; justify-content:space-between; font-size:12px; color:var(--text-dim); margin-top:4px;}
 .stat-row b{color:var(--text); font-family:'JetBrains Mono';}
 
+/* Grades / Notenschnitt */
+.grade-card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px 22px; margin-bottom:16px;}
+.grade-card h3{font-family:'Space Grotesk'; font-size:14.5px; margin-bottom:14px; display:flex; align-items:center; gap:8px;}
+.grade-mode-toggle{display:flex; gap:8px; margin-bottom:18px;}
+.grade-mode-toggle .pill{cursor:pointer; user-select:none;}
+.weight-row{display:grid; grid-template-columns:110px 1fr 46px; align-items:center; gap:12px; margin-bottom:12px;}
+.weight-row .wr-label{font-size:12.5px; font-weight:600; color:var(--text-dim);}
+.weight-row .wr-val{font-family:'JetBrains Mono'; font-size:12.5px; text-align:right; color:var(--text);}
+input[type="range"].weight-slider{
+  -webkit-appearance:none; appearance:none; width:100%; height:8px; border-radius:100px;
+  background:var(--bg-elevated); border:1px solid var(--border); outline:none; cursor:pointer;
+}
+input[type="range"].weight-slider::-webkit-slider-thumb{
+  -webkit-appearance:none; appearance:none; width:18px; height:18px; border-radius:50%;
+  background:var(--grad); box-shadow:0 0 0 3px rgba(139,107,255,.2), 0 2px 8px rgba(0,0,0,.35); cursor:pointer; border:none;
+}
+input[type="range"].weight-slider::-moz-range-thumb{
+  width:18px; height:18px; border-radius:50%; background:var(--grad); border:none; box-shadow:0 0 0 3px rgba(139,107,255,.2);
+}
+.weight-total-note{font-size:11.5px; color:var(--text-faint); margin:2px 0 18px; text-align:right;}
+.grade-cat-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(210px,1fr)); gap:14px; margin-bottom:18px;}
+.grade-cat{background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--radius-sm); padding:14px;}
+.grade-cat-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;}
+.grade-cat-head .name{font-size:13px; font-weight:700;}
+.grade-cat-head .avg{font-family:'JetBrains Mono'; font-size:12.5px; color:var(--text-dim);}
+.grade-cat-add{display:flex; gap:6px; margin-bottom:10px;}
+.grade-cat-add input{
+  flex:1; width:auto; background:var(--surface); border:1px solid var(--border); border-radius:8px;
+  padding:7px 9px; color:var(--text); font-size:13px; font-family:'JetBrains Mono';
+}
+.grade-cat-add button{padding:7px 11px; border-radius:8px; font-size:12.5px; font-weight:700; background:var(--grad); color:#0a0c14;}
+.grade-chips{display:flex; flex-wrap:wrap; gap:6px;}
+.grade-chip{
+  display:flex; align-items:center; gap:6px; background:var(--surface); border:1px solid var(--border);
+  border-radius:100px; padding:4px 6px 4px 11px; font-size:12px; font-family:'JetBrains Mono'; font-weight:700;
+}
+.grade-chip button{
+  width:16px; height:16px; border-radius:50%; background:var(--bg-elevated); color:var(--text-faint);
+  font-size:11px; line-height:1; display:flex; align-items:center; justify-content:center; font-weight:700;
+}
+.grade-chip button:hover{background:var(--coral); color:#fff;}
+.grade-cat-empty{font-size:11.5px; color:var(--text-faint);}
+.grade-result{
+  display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--radius-sm); padding:16px 20px;
+}
+.grade-result .gr-label{font-size:12.5px; color:var(--text-dim); font-weight:600;}
+.grade-result .gr-value{font-family:'Space Grotesk'; font-size:30px; font-weight:700;}
+.grade-result .gr-value.good{color:var(--mint);}
+.grade-result .gr-value.mid{color:var(--amber);}
+.grade-result .gr-value.bad{color:var(--coral);}
+.grade-result .gr-sub{font-size:11.5px; color:var(--text-faint); margin-top:2px;}
+.grade-empty-state{color:var(--text-faint); font-size:13px; padding:30px 6px; text-align:center; line-height:1.7;}
+
 /* Focus mode */
 .focus-wrap{display:flex; flex-direction:column; align-items:center; padding:50px 20px; text-align:center;}
 .focus-timer{font-family:'JetBrains Mono'; font-size:64px; font-weight:700; margin:24px 0; background:var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent;}
@@ -397,6 +451,7 @@ body.lockin-active .nav-item, body.lockin-active .topbar, body.lockin-active .bo
     <button class="nav-item" data-view="exams"><span class="ic">🚨</span>Klausuren</button>
     <button class="nav-item" data-view="focus"><span class="ic">🧠</span>Lernen</button>
     <button class="nav-item" data-view="subjects"><span class="ic">📚</span>Fächer</button>
+    <button class="nav-item" data-view="grades"><span class="ic">🧮</span>Notenschnitt</button>
     <button class="nav-item" data-view="summaries"><span class="ic">📄</span>Zusammenfassungen</button>
     <button class="nav-item" data-view="achievements"><span class="ic">🏆</span>Achievements</button>
     <button class="nav-item" data-view="ai-entry"><span class="ic">🤖</span>KI-Eintrag</button>
@@ -562,6 +617,20 @@ body.lockin-active .nav-item, body.lockin-active .topbar, body.lockin-active .bo
       <div class="grid" id="subjectList"></div>
     </div>
 
+    <!-- NOTENSCHNITT -->
+    <div class="view" id="view-grades">
+      <div class="hero-row">
+        <div>
+          <h1 class="font-display" style="font-size:22px;">Notenschnitt</h1>
+          <div style="color:var(--text-dim); font-size:13px; margin-top:4px;">Berechne deinen Schnitt pro Fach — mit eigener Gewichtung für mündlich, schriftlich & praktisch.</div>
+        </div>
+        <div class="field" style="width:230px; margin:0;">
+          <select id="gradesSubjectSelect" onchange="setGradeSubject(this.value)"></select>
+        </div>
+      </div>
+      <div id="gradeCalcBody"></div>
+    </div>
+
     <!-- ZUSAMMENFASSUNGEN -->
     <div class="view" id="view-summaries">
       <div class="hero-row">
@@ -648,6 +717,7 @@ body.lockin-active .nav-item, body.lockin-active .topbar, body.lockin-active .bo
   <div class="more-sheet-handle"></div>
   <div class="more-sheet-grid">
     <button class="more-sheet-item" data-view="subjects" onclick="goToView('subjects')"><span class="ic">📚</span>Fächer</button>
+    <button class="more-sheet-item" data-view="grades" onclick="goToView('grades')"><span class="ic">🧮</span>Notenschnitt</button>
     <button class="more-sheet-item" data-view="summaries" onclick="goToView('summaries')"><span class="ic">📄</span>Zusammenfassungen</button>
     <button class="more-sheet-item" data-view="achievements" onclick="goToView('achievements')"><span class="ic">🏆</span>Achievements</button>
     <button class="more-sheet-item" data-view="ai-entry" onclick="goToView('ai-entry')"><span class="ic">🤖</span>KI-Eintrag</button>
@@ -760,7 +830,7 @@ function addDaysISO(n){ const d=new Date(); d.setDate(d.getDate()+n); return d.t
 function daysUntil(iso){ const d=new Date(iso); const now=new Date(); now.setHours(0,0,0,0); d.setHours(0,0,0,0); return Math.round((d-now)/86400000); }
 
 /* ============ NAV ============ */
-const MORE_SHEET_VIEWS = ['subjects','summaries','achievements','ai-entry','profile'];
+const MORE_SHEET_VIEWS = ['subjects','grades','summaries','achievements','ai-entry','profile'];
 
 function showView(v){
   document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.classList.toggle('active', b.dataset.view===v));
@@ -1896,6 +1966,190 @@ function confirmDeleteSubject(subjectId){
   toast('🗑 Fach gelöscht');
 }
 
+/* ============ NOTENSCHNITT (GRADE CALCULATOR) ============ */
+const GRADE_CATS = [
+  {key:'muendlich', label:'Mündlich', icon:'🗣️'},
+  {key:'schriftlich', label:'Schriftlich', icon:'✍️'},
+  {key:'praktisch', label:'Praktisch', icon:'🔧'},
+];
+
+function ensureGradesData(subject){
+  if(!subject.grades){
+    subject.grades = {
+      mode: 'note', // 'note' (1-6) oder 'punkte' (0-15)
+      weights: { muendlich:50, schriftlich:50, praktisch:0 },
+      entries: { muendlich:[], schriftlich:[], praktisch:[] }
+    };
+  }
+  // Absicherung falls ältere/unvollständige gespeicherte Daten geladen werden
+  if(!subject.grades.entries) subject.grades.entries = { muendlich:[], schriftlich:[], praktisch:[] };
+  if(!subject.grades.weights) subject.grades.weights = { muendlich:50, schriftlich:50, praktisch:0 };
+  GRADE_CATS.forEach(c=>{
+    if(!Array.isArray(subject.grades.entries[c.key])) subject.grades.entries[c.key] = [];
+    if(typeof subject.grades.weights[c.key] !== 'number') subject.grades.weights[c.key] = 0;
+  });
+  return subject.grades;
+}
+
+let selectedGradeSubjectId = null;
+
+function renderGradesView(){
+  const sel = document.getElementById('gradesSubjectSelect');
+  if(!sel) return;
+  if(!state.subjects.some(s=>s.id===selectedGradeSubjectId)){
+    selectedGradeSubjectId = state.subjects[0] ? state.subjects[0].id : null;
+  }
+  sel.innerHTML = state.subjects.map(s=>`<option value="${s.id}" ${s.id===selectedGradeSubjectId?'selected':''}>${s.icon||SUBJECT_ICONS[s.name]||'📘'} ${s.name}</option>`).join('');
+  renderGradeCalculator();
+}
+
+function setGradeSubject(id){
+  selectedGradeSubjectId = id;
+  renderGradeCalculator();
+}
+
+function setGradeMode(mode){
+  const subject = state.subjects.find(s=>s.id===selectedGradeSubjectId);
+  if(!subject) return;
+  ensureGradesData(subject).mode = mode;
+  renderGradeCalculator();
+  scheduleSave();
+}
+
+function updateGradeWeight(changedKey, rawVal){
+  const subject = state.subjects.find(s=>s.id===selectedGradeSubjectId);
+  if(!subject) return;
+  const g = ensureGradesData(subject);
+  const keys = GRADE_CATS.map(c=>c.key);
+  let newVal = Math.max(0, Math.min(100, parseFloat(rawVal) || 0));
+  const others = keys.filter(k=>k!==changedKey);
+  const remaining = 100 - newVal;
+  const otherSum = others.reduce((a,k)=>a+g.weights[k], 0);
+  if(otherSum <= 0.0001){
+    others.forEach(k=>{ g.weights[k] = remaining/others.length; });
+  } else {
+    others.forEach(k=>{ g.weights[k] = remaining * (g.weights[k]/otherSum); });
+  }
+  g.weights[changedKey] = newVal;
+  renderGradeCalculator();
+  scheduleSave();
+}
+
+function addGradeEntry(catKey){
+  const subject = state.subjects.find(s=>s.id===selectedGradeSubjectId);
+  if(!subject) return;
+  const g = ensureGradesData(subject);
+  const input = document.getElementById('gradeInput_'+catKey);
+  let val = parseFloat((input.value||'').replace(',', '.'));
+  if(isNaN(val)){ toast('Bitte eine gültige Zahl eingeben'); return; }
+  const max = g.mode==='note' ? 6 : 15;
+  const min = g.mode==='note' ? 1 : 0;
+  if(val < min || val > max){ toast(`Wert muss zwischen ${min} und ${max} liegen`); return; }
+  g.entries[catKey].push(val);
+  input.value = '';
+  renderGradeCalculator();
+  scheduleSave();
+}
+
+function handleGradeInputKeydown(e, catKey){
+  if(e.key === 'Enter'){ e.preventDefault(); addGradeEntry(catKey); }
+}
+
+function deleteGradeEntry(catKey, index){
+  const subject = state.subjects.find(s=>s.id===selectedGradeSubjectId);
+  if(!subject) return;
+  const g = ensureGradesData(subject);
+  g.entries[catKey].splice(index, 1);
+  renderGradeCalculator();
+  scheduleSave();
+}
+
+function computeGradeResult(g){
+  const active = GRADE_CATS.map(c=>{
+    const arr = g.entries[c.key];
+    const avg = arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null;
+    return {...c, avg, weight:g.weights[c.key]};
+  }).filter(c=>c.avg!==null && c.weight>0);
+  if(!active.length) return null;
+  const weightSum = active.reduce((a,c)=>a+c.weight,0);
+  const overall = active.reduce((a,c)=>a + c.avg*c.weight, 0) / weightSum;
+  return { overall };
+}
+
+function renderGradeCalculator(){
+  const body = document.getElementById('gradeCalcBody');
+  if(!body) return;
+  const subject = state.subjects.find(s=>s.id===selectedGradeSubjectId);
+  if(!subject){
+    body.innerHTML = `<div class="grade-empty-state">Leg zuerst ein Fach unter "Fächer" an, um einen Notenschnitt zu berechnen.</div>`;
+    return;
+  }
+  const g = ensureGradesData(subject);
+  const isNote = g.mode === 'note';
+
+  const catsHtml = GRADE_CATS.map(c=>{
+    const arr = g.entries[c.key];
+    const avg = arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length) : null;
+    const chips = arr.length
+      ? `<div class="grade-chips">${arr.map((v,i)=>`<span class="grade-chip">${v.toFixed(1)}<button onclick="deleteGradeEntry('${c.key}',${i})" title="Entfernen">×</button></span>`).join('')}</div>`
+      : `<div class="grade-cat-empty">Noch keine Einträge</div>`;
+    return `
+      <div class="grade-cat">
+        <div class="grade-cat-head">
+          <span class="name">${c.icon} ${c.label}</span>
+          <span class="avg">${avg!==null ? '⌀ '+avg.toFixed(2) : '—'}</span>
+        </div>
+        <div class="grade-cat-add">
+          <input id="gradeInput_${c.key}" type="text" inputmode="decimal"
+            placeholder="${isNote ? 'z. B. 2,3' : 'z. B. 11'}"
+            onkeydown="handleGradeInputKeydown(event,'${c.key}')"/>
+          <button onclick="addGradeEntry('${c.key}')">+</button>
+        </div>
+        ${chips}
+      </div>`;
+  }).join('');
+
+  const result = computeGradeResult(g);
+  let resultHtml;
+  if(!result){
+    resultHtml = `<div class="grade-empty-state">Trag oben Noten oder Notenpunkte ein, um deinen gewichteten Schnitt für <b>${subject.name}</b> zu sehen.</div>`;
+  } else {
+    let cls = 'mid';
+    if(isNote){ cls = result.overall<=2.3 ? 'good' : (result.overall<=3.7 ? 'mid' : 'bad'); }
+    else { cls = result.overall>=10 ? 'good' : (result.overall>=5 ? 'mid' : 'bad'); }
+    resultHtml = `
+      <div class="grade-result">
+        <div>
+          <div class="gr-label">Gewichteter Schnitt · ${subject.name}</div>
+          <div class="gr-value ${cls}">${result.overall.toFixed(2)}${isNote?'':' Pkt.'}</div>
+          <div class="gr-sub">${isNote ? 'Notenskala 1 (sehr gut) – 6 (ungenügend)' : 'Notenpunkte 15 (sehr gut +) – 0 (ungenügend)'}</div>
+        </div>
+      </div>`;
+  }
+
+  body.innerHTML = `
+    <div class="grade-card">
+      <h3>⚙️ Skala</h3>
+      <div class="grade-mode-toggle">
+        <span class="pill ${isNote?'active':''}" onclick="setGradeMode('note')">Noten (1–6)</span>
+        <span class="pill ${!isNote?'active':''}" onclick="setGradeMode('punkte')">Notenpunkte (0–15)</span>
+      </div>
+      <h3>⚖️ Gewichtung</h3>
+      ${GRADE_CATS.map(c=>`
+        <div class="weight-row">
+          <span class="wr-label">${c.icon} ${c.label}</span>
+          <input type="range" class="weight-slider" min="0" max="100" step="1"
+            value="${Math.round(g.weights[c.key])}"
+            oninput="updateGradeWeight('${c.key}', this.value)"/>
+          <span class="wr-val">${Math.round(g.weights[c.key])}%</span>
+        </div>`).join('')}
+      <div class="weight-total-note">Summe: ${Math.round(GRADE_CATS.reduce((a,c)=>a+g.weights[c.key],0))}% · zieh einen Regler, die anderen passen sich automatisch an</div>
+      <h3>📥 Noten eintragen</h3>
+      <div class="grade-cat-grid">${catsHtml}</div>
+      ${resultHtml}
+    </div>`;
+}
+
 /* ============ ZUSAMMENFASSUNGEN VIEW ============ */
 function summaryPreviewText(content){
   return (content||'').trim().slice(0,160);
@@ -2121,6 +2375,7 @@ function renderAll(){
   renderTasksView();
   renderExamsView();
   renderSubjectsView();
+  renderGradesView();
   renderSummariesView();
   renderAchievementsView();
   renderProfile();
