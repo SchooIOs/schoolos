@@ -804,6 +804,20 @@ body.lockin-active .nav-item, body.lockin-active .topbar, body.lockin-active .bo
 
 <script>
 
+/* ============ SICHERHEIT: HTML-Escaping gegen XSS ============
+   Jeder Text, der von Nutzer:innen ODER von der KI stammt (Titel, Beschreibungen,
+   Fachnamen, Notizen, Zusammenfassungen …) MUSS hierdurch, bevor er per innerHTML
+   in die Seite eingefügt wird. Zahlen/IDs/feste Enum-Werte brauchen das nicht. */
+function esc(str){
+  if(str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 /* ============ STATE ============ */
 const SUBJECT_ICONS = {"Mathematik":"📐","Biologie":"🧬","Geschichte":"🌍","Englisch":"🇬🇧","Physik":"⚛️","Deutsch":"📖","Chemie":"🧪"};
 function subjectIcon(name){
@@ -883,7 +897,7 @@ function toast(msg, isLevel=false){
   const wrap = document.getElementById('toastWrap');
   const el = document.createElement('div');
   el.className = 'toast' + (isLevel?' level':'');
-  el.innerHTML = msg;
+  el.textContent = msg; // textContent statt innerHTML: verhindert XSS über dynamische Inhalte (Titel, Namen etc.)
   wrap.appendChild(el);
   setTimeout(()=>el.remove(), 3000);
 }
@@ -1026,7 +1040,7 @@ function renderSubjectDonut(){
   const legend = data.map((s,i)=>`
     <div class="donut-legend-item">
       <span class="donut-legend-dot" style="background:${DONUT_COLORS[i%DONUT_COLORS.length]}"></span>
-      <span>${subjectIcon(s.name)} ${s.name}</span>
+      <span>${subjectIcon(s.name)} ${esc(s.name)}</span>
       <b>${Math.round(s.xp/total*100)}%</b>
     </div>`).join('');
   wrap.innerHTML = `<div class="donut-wrap">
@@ -1046,9 +1060,9 @@ function urgencyClass(iso){
 
 function taskCardHtml(t){
   return `<div class="card task-card ${t.done?'done':''}">
-    <div class="tag">${t.subject}</div>
-    <div class="task-title">${t.done?'✅ ':''}${t.title}</div>
-    <div class="task-desc">${t.desc||''}</div>
+    <div class="tag">${esc(t.subject)}</div>
+    <div class="task-title">${t.done?'✅ ':''}${esc(t.title)}</div>
+    <div class="task-desc">${esc(t.desc||'')}</div>
     <div class="task-foot">
       <span class="xp-chip">+${t.xp} XP</span>
       ${t.done ? `<span style="font-size:11.5px;color:var(--mint);font-weight:700;">Erledigt</span>` : `<button class="btn small" onclick="completeTask(${t.id})">Erledigen</button>`}
@@ -1062,8 +1076,8 @@ function examCardHtml(e, isPast){
   const hasNotes = e.notes && e.notes.trim().length>0;
   const dateLabel = new Date(e.date+'T00:00:00').toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit', year:'numeric'});
   return `<div class="card exam-card ${cls}">
-    <div class="tag">${subjectIcon(e.subject)} ${e.subject}</div>
-    <div class="task-title">${e.title}</div>
+    <div class="tag">${subjectIcon(e.subject)} ${esc(e.subject)}</div>
+    <div class="task-title">${esc(e.title)}</div>
     ${isPast
       ? `<div class="exam-days past">📁 ${dateLabel}</div>`
       : `<div class="exam-days ${cls}">${d===0?'heute':d+' Tage'}</div>
@@ -1133,7 +1147,7 @@ function bumpStreak(){
 
 function openTaskModal(){
   const sel = document.getElementById('taskSubjectInput');
-  sel.innerHTML = state.subjects.map(s=>`<option>${s.name}</option>`).join('');
+  sel.innerHTML = state.subjects.map(s=>`<option>${esc(s.name)}</option>`).join('');
   document.getElementById('taskTitleInput').value='';
   document.getElementById('taskDescInput').value='';
   document.getElementById('taskDeadlineInput').value=todayISO();
@@ -1176,7 +1190,7 @@ function renderExamsView(){
 }
 function openExamModal(){
   const sel = document.getElementById('examSubjectInput');
-  sel.innerHTML = state.subjects.map(s=>`<option>${s.name}</option>`).join('');
+  sel.innerHTML = state.subjects.map(s=>`<option>${esc(s.name)}</option>`).join('');
   document.getElementById('examTitleInput').value='';
   document.getElementById('examDateInput').value=addDaysISO(7);
   document.getElementById('examTopicsInput').value='';
@@ -1208,9 +1222,9 @@ function openExamNotes(examId){
   const exam = state.exams.find(e=>e.id===examId);
   if(!exam) return;
   const html = `
-    <h3>${exam.title} — Lernzettel</h3>
+    <h3>${esc(exam.title)} — Lernzettel</h3>
     <div style="color:var(--text-dim); font-size:12.5px; margin:6px 0 14px;">Trag hier alles ein, was du zu dieser Klausur brauchst — Zusammenfassungen, Formeln, Notizen. Von überall abrufbar.</div>
-    <textarea class="lernzettel-textarea" id="lernzettelTextarea" placeholder="z. B. Formeln, Zusammenfassung, wichtige Punkte...">${exam.notes||''}</textarea>
+    <textarea class="lernzettel-textarea" id="lernzettelTextarea" placeholder="z. B. Formeln, Zusammenfassung, wichtige Punkte...">${esc(exam.notes||'')}</textarea>
     <div class="modal-actions">
       <button class="btn ghost" onclick="closeGenericModal()">Schließen</button>
       <button class="btn" onclick="saveExamNotes(${exam.id})">Speichern</button>
@@ -1584,7 +1598,11 @@ function aiToolExecute(name, args){
         return { success:true };
       }
       case "delete_task": {
-        if(!state.tasks.some(x=>x.id===args.task_id)) return { success:false, error:'Aufgabe nicht gefunden' };
+        const t = state.tasks.find(x=>x.id===args.task_id);
+        if(!t) return { success:false, error:'Aufgabe nicht gefunden' };
+        if(!window.confirm(`Die KI möchte die Aufgabe "${t.title}" löschen. Erlauben?`)){
+          return { success:false, error:'Nutzer hat die Löschung abgelehnt' };
+        }
         state.tasks = state.tasks.filter(x=>x.id!==args.task_id);
         renderAll();
         toast('🤖 Aufgabe gelöscht');
@@ -1609,7 +1627,11 @@ function aiToolExecute(name, args){
         return { success:true, exam };
       }
       case "delete_exam": {
-        if(!state.exams.some(x=>x.id===args.exam_id)) return { success:false, error:'Klausur nicht gefunden' };
+        const exam = state.exams.find(x=>x.id===args.exam_id);
+        if(!exam) return { success:false, error:'Klausur nicht gefunden' };
+        if(!window.confirm(`Die KI möchte die Klausur "${exam.title}" (inkl. Lernplan) löschen. Erlauben?`)){
+          return { success:false, error:'Nutzer hat die Löschung abgelehnt' };
+        }
         state.exams = state.exams.filter(x=>x.id!==args.exam_id);
         delete state.studyPlans[args.exam_id];
         renderAll();
@@ -1619,6 +1641,9 @@ function aiToolExecute(name, args){
       case "write_lernzettel": {
         const exam = state.exams.find(x=>x.id===args.exam_id);
         if(!exam) return { success:false, error:'Klausur nicht gefunden' };
+        if(exam.notes && exam.notes.trim() && !window.confirm(`Für "${exam.title}" existiert bereits ein Lernzettel. Von der KI überschreiben lassen?`)){
+          return { success:false, error:'Nutzer hat das Überschreiben abgelehnt' };
+        }
         exam.notes = args.content || '';
         renderAll();
         toast('🤖 Lernzettel gespeichert: '+exam.title);
@@ -1650,7 +1675,11 @@ function aiToolExecute(name, args){
         return { success:true, summary };
       }
       case "delete_summary": {
-        if(!state.summaries.some(x=>x.id===args.summary_id)) return { success:false, error:'Zusammenfassung nicht gefunden' };
+        const sm = state.summaries.find(x=>x.id===args.summary_id);
+        if(!sm) return { success:false, error:'Zusammenfassung nicht gefunden' };
+        if(!window.confirm(`Die KI möchte die Zusammenfassung "${sm.title}" löschen. Erlauben?`)){
+          return { success:false, error:'Nutzer hat die Löschung abgelehnt' };
+        }
         state.summaries = state.summaries.filter(x=>x.id!==args.summary_id);
         renderAll();
         toast('🤖 Zusammenfassung gelöscht');
@@ -1667,7 +1696,11 @@ function aiToolExecute(name, args){
         return { success:true, subject:subj };
       }
       case "delete_subject": {
-        if(!state.subjects.some(x=>x.id===args.subject_id)) return { success:false, error:'Fach nicht gefunden' };
+        const subj = state.subjects.find(x=>x.id===args.subject_id);
+        if(!subj) return { success:false, error:'Fach nicht gefunden' };
+        if(!window.confirm(`Die KI möchte das Fach "${subj.name}" löschen. Erlauben?`)){
+          return { success:false, error:'Nutzer hat die Löschung abgelehnt' };
+        }
         state.subjects = state.subjects.filter(x=>x.id!==args.subject_id);
         renderAll();
         toast('🤖 Fach gelöscht');
@@ -1895,9 +1928,9 @@ function generateStudyPlan(exam){
 function viewStudyPlan(examId){
   const exam = state.exams.find(e=>e.id===examId);
   const plan = state.studyPlans[examId] || [];
-  const html = `<h3>${exam.title} — Lernplan</h3>` + plan.map(p=>`
+  const html = `<h3>${esc(exam.title)} — Lernplan</h3>` + plan.map(p=>`
     <div style="display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--border); font-size:13.5px;">
-      <span><b>${p.day}</b> — ${p.task}</span><span class="mono" style="color:var(--text-dim);">${p.minutes} Min</span>
+      <span><b>${esc(p.day)}</b> — ${esc(p.task)}</span><span class="mono" style="color:var(--text-dim);">${p.minutes} Min</span>
     </div>`).join('') + `<div class="modal-actions"><button class="btn ghost" onclick="closeGenericModal()">Schließen</button></div>`;
   showGenericModal(html);
 }
@@ -1921,10 +1954,10 @@ function renderSubjectsView(){
   document.getElementById('subjectList').innerHTML = state.subjects.map(s=>`
     <div class="card">
       <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-        <div class="subj-icon">${s.icon || SUBJECT_ICONS[s.name] || '📘'}</div>
+        <div class="subj-icon">${esc(s.icon) || SUBJECT_ICONS[s.name] || '📘'}</div>
         <button class="btn small ghost danger" onclick="requestDeleteSubject('${s.id}')" title="Fach löschen">🗑</button>
       </div>
-      <div class="task-title">${s.name}</div>
+      <div class="task-title">${esc(s.name)}</div>
       <div class="stat-row"><span>Aufgaben</span><b>${s.tasks}</b></div>
       <div class="stat-row"><span>Erledigt</span><b>${s.done}</b></div>
       <div class="stat-row"><span>Lernzeit</span><b>${Math.floor(s.minutes/60)}h ${s.minutes%60}min</b></div>
@@ -1968,7 +2001,7 @@ function requestDeleteSubject(subjectId){
   if(!s) return;
   const inUse = state.tasks.some(t=>t.subject===s.name) || state.exams.some(e=>e.subject===s.name);
   const html = `
-    <h3>Fach "${s.name}" wirklich löschen?</h3>
+    <h3>Fach "${esc(s.name)}" wirklich löschen?</h3>
     <p style="color:var(--text-dim); font-size:13px; margin:10px 0 0;">${inUse
       ? 'Achtung: Es gibt noch Aufgaben oder Klausuren mit diesem Fach — die bleiben erhalten, verlieren aber die Fach-Zuordnung in der Statistik.'
       : 'Dieses Fach hat noch keine Aufgaben oder Klausuren.'}</p>
@@ -2025,7 +2058,7 @@ function renderGradesView(){
   if(!state.subjects.some(s=>s.id===selectedGradeSubjectId)){
     selectedGradeSubjectId = state.subjects[0] ? state.subjects[0].id : null;
   }
-  sel.innerHTML = state.subjects.map(s=>`<option value="${s.id}" ${s.id===selectedGradeSubjectId?'selected':''}>${s.icon||SUBJECT_ICONS[s.name]||'📘'} ${s.name}</option>`).join('');
+  sel.innerHTML = state.subjects.map(s=>`<option value="${s.id}" ${s.id===selectedGradeSubjectId?'selected':''}>${esc(s.icon||SUBJECT_ICONS[s.name]||'📘')} ${esc(s.name)}</option>`).join('');
   renderGradeCalculator();
 }
 
@@ -2071,8 +2104,8 @@ function renderGradesOverview(){
     return `
       <div class="grade-subject-card ${active?'active':''}" onclick="setGradeSubject('${subject.id}')">
         <div class="gcs-head">
-          <span class="gcs-icon">${subject.icon||SUBJECT_ICONS[subject.name]||'📘'}</span>
-          <span class="gcs-name">${subject.name}</span>
+          <span class="gcs-icon">${esc(subject.icon)||SUBJECT_ICONS[subject.name]||'📘'}</span>
+          <span class="gcs-name">${esc(subject.name)}</span>
         </div>
         ${valueHtml}
       </div>`;
@@ -2188,7 +2221,7 @@ function renderGradeCalculator(){
   const result = computeGradeResult(g);
   let resultHtml;
   if(!result){
-    resultHtml = `<div class="grade-empty-state">Trag oben Noten oder Notenpunkte ein, um deinen gewichteten Schnitt für <b>${subject.name}</b> zu sehen.</div>`;
+    resultHtml = `<div class="grade-empty-state">Trag oben Noten oder Notenpunkte ein, um deinen gewichteten Schnitt für <b>${esc(subject.name)}</b> zu sehen.</div>`;
   } else {
     let cls = 'mid';
     if(isNote){ cls = result.overall<=2.3 ? 'good' : (result.overall<=3.7 ? 'mid' : 'bad'); }
@@ -2196,7 +2229,7 @@ function renderGradeCalculator(){
     resultHtml = `
       <div class="grade-result">
         <div>
-          <div class="gr-label">Gewichteter Schnitt · ${subject.name}</div>
+          <div class="gr-label">Gewichteter Schnitt · ${esc(subject.name)}</div>
           <div class="gr-value ${cls}">${result.overall.toFixed(2)}${isNote?'':' Pkt.'}</div>
           <div class="gr-sub">${isNote ? 'Notenskala 1 (sehr gut) – 6 (ungenügend)' : 'Notenpunkte 15 (sehr gut +) – 0 (ungenügend)'}</div>
         </div>
@@ -2245,13 +2278,13 @@ function renderSummariesView(){
   });
   wrap.innerHTML = Object.keys(bySubject).map(subjName=>`
     <div class="summary-subject-group">
-      <div class="summary-subject-head"><span>${subjectIcon(subjName)}</span><span>${subjName}</span></div>
+      <div class="summary-subject-head"><span>${subjectIcon(subjName)}</span><span>${esc(subjName)}</span></div>
       <div class="grid">
         ${bySubject[subjName].map(sm=>`
           <div class="card summary-card" onclick="openSummaryDetail(${sm.id})">
-            <div class="task-title">${sm.title}</div>
-            <div class="summary-preview">${summaryPreviewText(sm.content) || 'Kein Inhalt'}</div>
-            <div class="summary-meta">${sm.createdAt || ''}</div>
+            <div class="task-title">${esc(sm.title)}</div>
+            <div class="summary-preview">${esc(summaryPreviewText(sm.content)) || 'Kein Inhalt'}</div>
+            <div class="summary-meta">${esc(sm.createdAt || '')}</div>
           </div>`).join('')}
       </div>
     </div>`).join('');
@@ -2261,7 +2294,7 @@ function openSummaryModal(){
   const html = `
     <h3>Neue Zusammenfassung</h3>
     <div class="field"><label>Fach</label>
-      <select id="summarySubjectInput">${state.subjects.map(s=>`<option>${s.name}</option>`).join('')}</select>
+      <select id="summarySubjectInput">${state.subjects.map(s=>`<option>${esc(s.name)}</option>`).join('')}</select>
     </div>
     <div class="field"><label>Titel</label><input id="summaryTitleInput" placeholder="z. B. Mitose, Zellbiologie, Kapitel 3..."/></div>
     <div class="field"><label>Inhalt</label>
@@ -2294,9 +2327,9 @@ function openSummaryDetail(summaryId){
   const sm = state.summaries.find(s=>s.id===summaryId);
   if(!sm) return;
   const html = `
-    <h3>${sm.title}</h3>
-    <div style="color:var(--text-dim); font-size:12.5px; margin:6px 0 14px;">Fach: ${sm.subject}${sm.createdAt ? ' · '+sm.createdAt : ''}</div>
-    <textarea class="lernzettel-textarea" id="summaryEditTextarea">${sm.content||''}</textarea>
+    <h3>${esc(sm.title)}</h3>
+    <div style="color:var(--text-dim); font-size:12.5px; margin:6px 0 14px;">Fach: ${esc(sm.subject)}${sm.createdAt ? ' · '+esc(sm.createdAt) : ''}</div>
+    <textarea class="lernzettel-textarea" id="summaryEditTextarea">${esc(sm.content||'')}</textarea>
     <div class="modal-actions">
       <button class="btn small ghost danger" onclick="requestDeleteSummary(${sm.id})">🗑 Löschen</button>
       <button class="btn ghost" onclick="closeGenericModal()">Schließen</button>
@@ -2316,7 +2349,7 @@ function requestDeleteSummary(summaryId){
   const sm = state.summaries.find(s=>s.id===summaryId);
   if(!sm) return;
   const html = `
-    <h3>Zusammenfassung "${sm.title}" wirklich löschen?</h3>
+    <h3>Zusammenfassung "${esc(sm.title)}" wirklich löschen?</h3>
     <div class="modal-actions">
       <button class="btn ghost" onclick="openSummaryDetail(${sm.id})">Abbrechen</button>
       <button class="btn" style="background:var(--coral);" onclick="confirmDeleteSummary(${sm.id})">Ja, löschen</button>
@@ -2337,7 +2370,7 @@ function renderAchievementsView(){
 
 /* ============ FOCUS MODE ============ */
 function populateFocusSubjects(){
-  document.getElementById('focusSubject').innerHTML = state.subjects.map(s=>`<option>${s.name}</option>`).join('');
+  document.getElementById('focusSubject').innerHTML = state.subjects.map(s=>`<option>${esc(s.name)}</option>`).join('');
 }
 function startFocus(){
   const subject = document.getElementById('focusSubject').value;
