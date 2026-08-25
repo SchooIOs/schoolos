@@ -3,6 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Content-Security-Policy als zusätzliche Verteidigungsebene gegen XSS/Datenabfluss.
+     Hinweis: script-src erlaubt 'unsafe-inline', weil die App durchgehend onclick="…"-Attribute
+     nutzt. Das verhindert klassische <script>-Injection über fremde Domains, schützt aber NICHT
+     vollständig vor per innerHTML eingeschleusten Inline-Handlern (z. B. onerror=...) — die
+     Haupt-Verteidigung dagegen ist konsequentes HTML-Escaping (esc()) im Code selbst.
+     frame-ancestors kann nur per HTTP-Header gesetzt werden, nicht per <meta> — beim Hosting
+     (Netlify/Vercel/Firebase Hosting) zusätzlich einen Header 'X-Frame-Options: DENY' setzen. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob:; connect-src 'self' https://generativelanguage.googleapis.com https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com; object-src 'none'; base-uri 'self'; form-action 'self';">
 <title>SchoolOS</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap');
@@ -1264,7 +1272,7 @@ function confirmDeleteExam(){
 // WICHTIG: Ein im Frontend eingetragener Key ist für jeden Besucher der Seite sichtbar/nutzbar.
 // Für eine echte Veröffentlichung sollte dieser Aufruf über ein eigenes Backend (Cloud Function o.ä.) laufen,
 // das den Key serverseitig hält.
-const GEMINI_API_KEY = "AQ.Ab8RN6JTXz9G-Pqg1Lxl764WebYUwKVHpQ_VmbDRq1WKegsHFQ";
+const GEMINI_API_KEY = "AQ.Ab8RN6J4coNjH8cMgKJNWcJDaM14ScwuVVamaZtytjYnZregeA";
 const GEMINI_MODEL = "gemini-3.6-flash";
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
@@ -1655,6 +1663,9 @@ function aiToolExecute(name, args){
         if(args.summary_id){
           const sm = state.summaries.find(x=>x.id===args.summary_id);
           if(!sm) return { success:false, error:'Zusammenfassung nicht gefunden' };
+          if(sm.content && sm.content.trim() && !window.confirm(`Die Zusammenfassung "${sm.title}" hat bereits Inhalt. Von der KI überschreiben lassen?`)){
+            return { success:false, error:'Nutzer hat das Überschreiben abgelehnt' };
+          }
           sm.title = args.title || sm.title;
           sm.subject = subjectName;
           sm.content = args.content || '';
@@ -1698,7 +1709,11 @@ function aiToolExecute(name, args){
       case "delete_subject": {
         const subj = state.subjects.find(x=>x.id===args.subject_id);
         if(!subj) return { success:false, error:'Fach nicht gefunden' };
-        if(!window.confirm(`Die KI möchte das Fach "${subj.name}" löschen. Erlauben?`)){
+        const inUse = state.tasks.some(t=>t.subject===subj.name) || state.exams.some(e=>e.subject===subj.name);
+        const warnMsg = inUse
+          ? `Die KI möchte das Fach "${subj.name}" löschen. Achtung: Es gibt noch Aufgaben/Klausuren mit diesem Fach. Erlauben?`
+          : `Die KI möchte das Fach "${subj.name}" löschen. Erlauben?`;
+        if(!window.confirm(warnMsg)){
           return { success:false, error:'Nutzer hat die Löschung abgelehnt' };
         }
         state.subjects = state.subjects.filter(x=>x.id!==args.subject_id);
@@ -2554,8 +2569,10 @@ function hideAuthMessages(){
 function friendlyAuthError(err){
   const map = {
     'auth/invalid-email': 'Diese E-Mail-Adresse ist ungültig.',
-    'auth/user-not-found': 'Kein Account mit dieser E-Mail gefunden.',
-    'auth/wrong-password': 'Falsches Passwort.',
+    // user-not-found & wrong-password bewusst zusammengefasst: verhindert, dass man
+    // durch die Fehlermeldung herausfinden kann, ob eine E-Mail-Adresse registriert ist.
+    'auth/user-not-found': 'E-Mail oder Passwort ist falsch.',
+    'auth/wrong-password': 'E-Mail oder Passwort ist falsch.',
     'auth/invalid-credential': 'E-Mail oder Passwort ist falsch.',
     'auth/email-already-in-use': 'Für diese E-Mail existiert bereits ein Account.',
     'auth/weak-password': 'Das Passwort muss mindestens 6 Zeichen haben.',
